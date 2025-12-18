@@ -30,7 +30,7 @@ LOG_LEVELS = {
 
 # 默认配置
 DEFAULT_LOG_FORMAT = (
-    "%(asctime)s [%(levelname)s] [%(name)-8s] [%(threadName)s] "
+    "%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] "
     "[%(machine_id)s.%(thread)d.%(trace_id)-16s] >>> %(message)s"
 )
 
