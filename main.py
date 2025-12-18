@@ -1,17 +1,17 @@
 """
 Athena 主程序入口
 """
-
-from dotenv import load_dotenv
-from athena.utils.logger import setup_logger
-
-load_dotenv()
-logger = setup_logger()
+from config.logger import get_logger
+from setup import load_config
+import logging
 
 def main():
-    """主函数"""
-    # logger.info("Hello from athena!", extra={"traceid": "66f8a9d2e7b3c4a0"})
-    logger.info("Hello from athena!")
+    # 加载配置
+    load_config()
+
+    logger = get_logger()
+
+    logger.info("Hello from athena!", extra={"traceid": "66f8a9d2e7b3c4a0"})
 
 
 if __name__ == "__main__":
