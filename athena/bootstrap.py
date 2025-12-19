@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 
-from config.logger import setup_logger, get_logger
-from config.settings import settings
+from athena.config.logger import setup_logger, get_logger
+from athena.config.settings import settings
 
 if TYPE_CHECKING:
     from argparse import Namespace

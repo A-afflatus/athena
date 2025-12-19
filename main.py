@@ -16,11 +16,11 @@ import sys
 from types import FrameType
 from typing import TYPE_CHECKING
 
-from bootstrap import bootstrap
-from config.logger import get_logger
+from athena.bootstrap import bootstrap
+from athena.config.logger import get_logger
 
 if TYPE_CHECKING:
-    from bootstrap import AppContext
+    from athena.bootstrap import AppContext
 
 
 class Application:
