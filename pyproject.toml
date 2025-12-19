@@ -22,7 +22,7 @@ classifiers = [
 dependencies = [
     "python-dotenv>=1.0.0",  # 环境变量管理
     "pyyaml>=6.0.0",         # YAML 配置解析
-    "fastapi>=0.115.0",      # Web 框架
+    "fastapi>=0.125.0",      # Web 框架
     "uvicorn>=0.32.0",       # ASGI 服务器
 ]
 

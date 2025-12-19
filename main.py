@@ -75,16 +75,15 @@ class Application:
     def _run(self) -> None:
         # _logger 在此方法调用前已初始化
         assert self._logger is not None
-        
-        self._logger.info(
-            "Athena 已启动！",
-            extra={"trace_id": "system-startup"},
-        )
-        
-        # TODO: 在这里添加你的业务逻辑
-        # 示例：启动 API 服务器、任务调度器等
         profile = self.ctx.profile if self.ctx else "unknown"
         self._logger.info(f"当前运行环境: {profile}")
+
+        # TODO: 在这里添加你的业务逻辑
+        # 示例：启动 API 服务器、任务调度器等
+
+
+        self._logger.info("Athena 已启动！")
+
     
     def _shutdown(self) -> None:
         self._running = False
