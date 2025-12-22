@@ -172,7 +172,7 @@ class LoggerConfig:
     def _setup_root_logger(self) -> None:
         """配置根日志器"""
         # 获取应用的根日志器
-        root_logger = logging.getLogger("athena")
+        root_logger = logging.getLogger()
         root_logger.setLevel(LOG_LEVELS.get(self.log_level, logging.INFO))
         
         # 清除已有的处理器
@@ -244,23 +244,5 @@ def setup_logger(
     )
 
 
-def get_logger(name: str = "athena") -> logging.Logger:
-    """
-    获取日志器
-    
-    Args:
-        name: 日志器名称，建议使用模块名
-              如 "athena.api" 或 "athena.tasks"
-              
-    Returns:
-        配置好的日志器实例
-        
-    Example:
-        >>> logger = get_logger(__name__)
-        >>> logger.info("处理请求", extra={"trace_id": "abc123"})
-    """
-    # 确保名称以 athena 开头，以继承配置
-    if not name.startswith("athena"):
-        name = f"athena.{name}"
-    
+def get_logger(name: str = __name__) -> logging.Logger:
     return logging.getLogger(name)

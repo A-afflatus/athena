@@ -1,2 +1,4 @@
-app:
-  version: "0.1.0"
+is-debug: true
+llm:
+  qwen:
+    base-url: "https://dashscope.aliyuncs.com/compatible-mode/v1"

@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 from athena.bootstrap import bootstrap
 from athena.config.logger import get_logger
+from athena.core.athena import Athena
 
 if TYPE_CHECKING:
     from athena.bootstrap import AppContext
@@ -80,7 +81,9 @@ class Application:
 
         # TODO: 在这里添加你的业务逻辑
         # 示例：启动 API 服务器、任务调度器等
-
+        athena = Athena()
+        response = athena.chat("你好")
+        self._logger.info(f"Athena 回复: {response}")
 
         self._logger.info("Athena 已启动！")
 

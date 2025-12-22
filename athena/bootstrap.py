@@ -154,7 +154,7 @@ def bootstrap(args: Namespace | None = None) -> AppContext:
         log_level=log_level,
         log_file=settings.get("log.file", "logs/athena.log"),
         machine_id=ctx.machine_id,
-        console_output=settings.get("log.console_output", True),
+        console_output=settings.get("log.console-output", True),
     )
     
     # 7. 记录启动信息

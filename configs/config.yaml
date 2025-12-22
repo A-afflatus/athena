@@ -1,6 +1,7 @@
 app:
   name: "Athena"
+is-debug: false
 log:
   level: "INFO"
   file: "logs/athena.log"
-  console_output: true
+  console-output: true
