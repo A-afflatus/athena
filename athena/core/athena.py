@@ -25,11 +25,11 @@ class Athena:
         # 对话agent的系统提示词
         # 统一对话agent
         self.llm_qwen = ChatQwen(
-            model_name="qwen-flash", 
+            model="qwen-flash", 
             temperature=0.5, 
             enable_thinking=False,
             api_key=SecretStr(settings.get("llm.qwen.api-key")),
-            api_base=settings.get("llm.qwen.base-url"),
+            base_url=settings.get("llm.qwen.base-url"),
             verbose=settings.get("is-debug"),
         )
         self.agent = create_agent(
@@ -38,10 +38,3 @@ class Athena:
             system_prompt="你是一个类似钢铁侠中贾维斯的智能ai助手，回答直击问题根源，不要给出任何解释，直接回答问题。",
             debug=settings.get("is-debug"),
         )
-        
-
-    def chat(self, message: str) -> str:
-        self.messages.append(HumanMessage(content=message))
-        response = self.llm_qwen.invoke(self.messages)
-        self.messages.append(AIMessage(content=response.content))
-        return response.content
