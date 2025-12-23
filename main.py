@@ -10,10 +10,10 @@ Athena - 智能个人助理
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import signal
 import sys
-from types import FrameType
 from typing import TYPE_CHECKING
 
 from athena.bootstrap import bootstrap
@@ -32,32 +32,44 @@ class Application:
 
     Attributes:
         ctx: 应用上下文
-        _running: 运行状态标志
     """
 
     def __init__(self) -> None:
         self.ctx: AppContext | None = None
         self._logger: logging.Logger | None = None
+        self._shutdown_event: asyncio.Event | None = None
 
-    def _run(self) -> None:
+    async def _run(self) -> None:
         # _logger 在此方法调用前已初始化
         assert self._logger is not None
+        assert self._shutdown_event is not None
+        
         profile = self.ctx.profile if self.ctx else "unknown"
         self._logger.info(f"当前运行环境: {profile}")
         # 启动Athena
         athena = Athena()
         # todo 挂载对话接口
         self._logger.info("Athena 已启动！")
+        
+        # 等待关闭事件
+        await self._shutdown_event.wait()
 
-    def start(self) -> None:
+    async def _start(self) -> None:
+        """异步启动方法"""
         try:
+            # 在异步上下文中创建事件
+            self._shutdown_event = asyncio.Event()
+            
             # 引导应用
             self.ctx = bootstrap()
             self._logger = get_logger(__name__)
 
-            # 注册信号处理
-            self._setup_signal_handlers()
-            self._run()
+            # 使用 asyncio 的原生信号处理（更简洁且线程安全）
+            loop = asyncio.get_running_loop()
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.add_signal_handler(sig, self._handle_signal, sig)
+            
+            await self._run()
 
         except KeyboardInterrupt:
             if self._logger is not None:
@@ -69,23 +81,23 @@ class Application:
                 print(f"启动失败: {e}", file=sys.stderr)
             sys.exit(1)
         finally:
-            self._shutdown()
+            await self._shutdown()
 
-    def _setup_signal_handlers(self) -> None:
-        """设置信号处理器"""
-        signal.signal(signal.SIGINT, self._handle_signal)
-        signal.signal(signal.SIGTERM, self._handle_signal)
+    def start(self) -> None:
+        """同步启动入口，内部调用异步方法"""
+        asyncio.run(self._start())
 
-    def _handle_signal(self, signum: int, frame: FrameType | None) -> None:
+    def _handle_signal(self, signum: int) -> None:
         """处理信号"""
         signal_name = signal.Signals(signum).name
         if self._logger is not None:
             self._logger.info(f"收到信号: {signal_name}")
-        self._running = False
+        # 直接设置事件（因为已经在事件循环的线程中了）
+        if self._shutdown_event is not None:
+            self._shutdown_event.set()
 
-    def _shutdown(self) -> None:
-        self._running = False
-
+    async def _shutdown(self) -> None:
+        """异步关闭方法"""
         if self._logger is not None:
             self._logger.info("应用正在关闭...")
             # TODO: 在这里添加清理逻辑
