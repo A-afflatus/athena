@@ -1,4 +1,4 @@
-is-debug: true
+is-debug: false
 llm:
   qwen:
     base-url: "https://dashscope.aliyuncs.com/compatible-mode/v1"

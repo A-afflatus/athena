@@ -48,9 +48,21 @@ class Application:
         self._logger.info(f"当前运行环境: {profile}")
         # 启动Athena
         athena = Athena()
+        # 初始化athena
+        await athena.init()
         # todo 挂载对话接口
+        # 循环等待控制台输入用户消息，并调用 athena.dialogue，直到收到退出信号
+        while True:
+            user_input = input("你：")
+            if user_input == "exit":
+                break
+            if not user_input.strip():
+                continue
+            await athena.dialogue(user_input)
+            print()  # 换行美化输出
         self._logger.info("Athena 已启动！")
-        
+
+        self._shutdown_event.set() # todo 测试用，后续删除
         # 等待关闭事件
         await self._shutdown_event.wait()
 
