@@ -54,7 +54,7 @@ class AppContext:
             logger.warning(f"未知的环境配置: {self.profile}，使用 dev 作为默认值")
             self.profile = "dev"
 
-
+# todo 这个现在还不能保证机器号唯一，后续需要优化。
 def _generate_machine_id() -> str:
     """结合主机名和 MAC 地址生成一个 6 位的机器 ID。"""
     try:

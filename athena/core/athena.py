@@ -6,6 +6,8 @@ Athena 核心类
 
 from __future__ import annotations
 
+import uuid
+
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.runtime import Runtime
@@ -30,6 +32,11 @@ from langchain.agents.middleware.types import AgentMiddleware
 
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from athena.config.settings import get_settings
+from athena.core.entity.entity import DialogueContext, DialogueState
+from athena.core.middleware.intention_recognition import IntentionRecognitionMiddleware
+from athena.core.middleware.tool_selection import ToolSelectionMiddleware
+from athena.core.tools.mcp import init_mcp_tools
+from athena.core.tools.tools import init_tools
 
 
 logger = get_logger(__name__)
@@ -192,22 +199,6 @@ Athena观察主人对不同人的态度，逐步调整自己的交互方式以�
 # endregion
 
 
-class DialogueContext(BaseModel):
-    """用户上下文"""
-
-    user_id: str = Field(description="用户ID")
-    user_type: str = Field(description="用户身份类型", default="陌生人")
-    user_name: str | None = Field(description="用户名称", default=None)
-    user_gender: str | None = Field(description="用户性别", default=None)
-    user_location: str = Field(description="用户当前位置", default="未知")
-
-
-class DialogueState(AgentState):
-    """对话状态"""
-
-    pass
-
-
 # 通过声色和用户信息动态提示词
 @dynamic_prompt
 def dynamic_system_prompt(request: ModelRequest) -> str:
@@ -257,15 +248,7 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
 # ! 用户聊天是如果询问过往则需要调用嵌入模型去检索长期记忆
 
 
-@before_agent
-def before_agent_handler(
-    state: DialogueState, runtime: Runtime[DialogueContext]
-) -> dict[str, Any] | None:
-    """意图识别"""
-    pass
-
-
-class Athena(AgentMiddleware):
+class Athena:
     def __init__(self):
         super().__init__()
         self.settings = get_settings()
@@ -282,6 +265,15 @@ class Athena(AgentMiddleware):
             verbose=self.settings.get("is-debug"),
             model_kwargs={"extra_body": {"enable_search": True}},  # 启用千问自带的联网搜索功能
         )
+        # 意图识别llm
+        self.intention_llm = ChatQwen(
+            model="qwen-flash",
+            temperature=0.1,  # 降低温度以确保总结的准确性和一致性
+            enable_thinking=False,  # 总结任务不需要复杂推理，保持速度
+            api_key=SecretStr(self.settings.get("llm.qwen.api-key")),
+            base_url=self.settings.get("llm.qwen.base-url"),
+            verbose=self.settings.get("is-debug"),
+        )
         # 总结llm - 用于上下文摘要，需要快速且准确
         self.summarization_llm = ChatQwen(
             model="qwen-plus",
@@ -292,80 +284,74 @@ class Athena(AgentMiddleware):
             verbose=self.settings.get("is-debug"),
         )
 
-    async def init_mcp_tools(self):
-        """初始化mcp工具"""
-        mcp_client = MultiServerMCPClient(
-            {
-                # 高德mcp工具
-                "amap": {
-                    "transport": "streamable_http",
-                    "url": f"https://mcp.amap.com/mcp?key={self.settings.get('mcp.amap.key')}",
-                },
-                # * 经测试，这个websearch机器不准确 千问模型自带联网搜索，就不在这里设置mcp工具了
-                # "bing-web-search": {
-                #     "transport": "stdio",
-                #     "command": "bunx",
-                #     "args": ["bing-cn-mcp"],
-                # }
-            }
-        )
-        tools_all = await mcp_client.get_tools()
-        tools = [
-            tool
-            for tool in tools_all
-            if getattr(tool, "name", None) == "maps_weather"
-            or not getattr(tool, "name", "").startswith("maps")
-        ]
-        # 强化 maps_weather 工具的描述，使其更清晰和详细
-        for tool in tools:
-            if getattr(tool, "name", None) == "maps_weather":
-                tool.description = "根据省市名称(如北京、安徽、安庆等,最低到市级别不能再细分)查询指定城市未来几天的天气情况"
-        return tools
-
     async def init(self):
         """初始化agent"""
         # 初始化模型
         self.init_llm()
+        # 工具
+        tools = await init_tools()
         # 短期记忆
         memory = InMemorySaver()
         # 属性存储 命名空间+键值对的方式
-        store = InMemoryStore()
-        # mcp工具
-        tools = await self.init_mcp_tools()
+        self.store = InMemoryStore()
+
+        # 意图识别中间件
+        intention_middleware = IntentionRecognitionMiddleware(llm=self.intention_llm)
+        # 工具选择中间件（根据意图动态调整工具）
+        tool_selection_middleware = ToolSelectionMiddleware(all_tools=tools)
 
         self.agent = create_agent(
             model=self.admin_llm,
             tools=tools,
             checkpointer=memory,
-            store=store,
+            store=self.store,
             context_schema=DialogueContext,  # 单伦上下文
             state_schema=DialogueState,  # 多伦对话状态
             middleware=[  # type: ignore
                 dynamic_system_prompt,  # 动态系统提示词
+                intention_middleware,  # 意图识别
+                tool_selection_middleware,  # 工具选择（必须在意图识别之后）
                 SummarizationMiddleware(model=self.summarization_llm),  # 上下文摘要
             ],
             debug=self.settings.get("is-debug"),
         )
 
-    async def dialogue(self, message: str):
+    async def dialogue(self):
         """对话"""
-        async for event in self.agent.astream_events(
-            {"messages": [HumanMessage(content=message)]},
-            {"configurable": {"thread_id": "123"}},
-            context=DialogueContext(
-                user_id="root",
-                user_type="主人",
-                user_name="汪京",
-                user_gender="男",
-                user_location="北京市亦庄经济开发区",
-            ),
-            version="v2",
-        ):
-            # logger.warning(f"event: {event}")
-            if event.get("event") == "on_chat_model_stream":
-                chunk = event.get("data", {}).get("chunk")
-                if chunk and hasattr(chunk, "content"):
-                    print(chunk.content, end="", flush=True)
+        thread_id = str(uuid.uuid4())
+        while True:
+            user_input = input("你：")
+            if not user_input.strip():
+                continue
+            config = {"configurable": {"thread_id": thread_id}}
+            async for event in self.agent.astream_events(
+                {"messages": [HumanMessage(content=user_input)]},
+                config,
+                context=DialogueContext(
+                    thread_id=thread_id,
+                    user_id="root",
+                    user_type="主人",
+                    user_name="汪京",
+                    user_gender="男",
+                    user_location="北京市亦庄经济开发区",
+                ),
+                version="v2",
+            ):
+              # logger.warning(f"event: {event}")
+              if event.get("event") == "on_chat_model_stream":
+                  chunk = event.get("data", {}).get("chunk")
+                  if chunk and hasattr(chunk, "content"):
+                      print(f"\033[34m{chunk.content}\033[0m", end="", flush=True)
+            print()
+            
+            # 检查退出标志
+            state = self.agent.get_state(config)
+            if state.values.get("should_exit", False):
+                logger.info("用户请求退出，结束对话")
+                break
+
+
+ 
 
             # 流程流
             # on_chain_start
