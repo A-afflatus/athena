@@ -7,11 +7,15 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Any, cast, override
+from typing import cast, override
 
-from langchain.agents.middleware.types import AgentMiddleware, ModelCallResult, ModelRequest, ModelResponse
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain_core.tools import BaseTool
-from langgraph.runtime import Runtime
 
 from athena.config.logger import get_logger
 from athena.core.entity.entity import DialogueContext, DialogueState, IntentionType
@@ -105,7 +109,7 @@ class ToolSelectionMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
         selected_tools = self._get_tools_for_intention(intentions)
 
         # 如果工具列表有变化，使用 override 创建新的请求
-        if len(selected_tools) != len(request.tools) or set(t.name for t in selected_tools) != set(t.name for t in request.tools):
+        if len(selected_tools) != len(request.tools) or {t.name for t in selected_tools} != {t.name for t in request.tools}:
             logger.debug(
                 f"根据意图 {intentions} 调整工具: "
                 f"从 {len(request.tools)} 个工具调整为 {len(selected_tools)} 个工具"

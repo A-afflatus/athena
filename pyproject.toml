@@ -28,6 +28,9 @@ dependencies = [
     "langchain-qwq>=0.3.1",
     "langchain-deepseek>=1.0.1",
     "langchain-mcp-adapters>=0.2.1",
+    "graphiti-core>=0.25.0",
+    "volcengine-python-sdk[ark]>=5.0.1",
+    "dashscope>=1.25.5",
 ]
 
 [project.optional-dependencies]

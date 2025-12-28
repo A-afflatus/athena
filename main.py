@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING
 from athena.bootstrap import bootstrap
 from athena.config.logger import get_logger
 from athena.core.athena import Athena
+from middleware.graphiti import close_graphiti
 
 if TYPE_CHECKING:
     from athena.bootstrap import AppContext
@@ -65,7 +66,7 @@ class Application:
             self._shutdown_event = asyncio.Event()
             
             # 引导应用
-            self.ctx = bootstrap()
+            self.ctx = await bootstrap()
             self._logger = get_logger(__name__)
 
             # 使用 asyncio 的原生信号处理（更简洁且线程安全）
@@ -104,8 +105,7 @@ class Application:
         """异步关闭方法"""
         if self._logger is not None:
             self._logger.info("应用正在关闭...")
-            # TODO: 在这里添加清理逻辑
-            # 例如：关闭数据库连接、停止后台任务等
+            await close_graphiti()
             self._logger.info("应用已安全退出")
 
 

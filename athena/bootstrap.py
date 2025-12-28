@@ -22,8 +22,9 @@ from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 
-from athena.config.logger import setup_logger, get_logger
+from athena.config.logger import get_logger, setup_logger
 from athena.config.settings import settings
+from middleware.graphiti import setup_graphiti
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -106,7 +107,7 @@ def parse_arguments() -> Namespace:
     return parser.parse_args()
 
 
-def bootstrap(args: Namespace | None = None) -> AppContext:
+async def bootstrap(args: Namespace | None = None) -> AppContext:
     """
     引导应用启动
     
@@ -157,7 +158,10 @@ def bootstrap(args: Namespace | None = None) -> AppContext:
         console_output=settings.get("log.console-output", True),
     )
     
-    # 7. 记录启动信息
+    # 7. 初始化 Graphiti 这里先把settings传过去，todo 理论上不应该让组件关心工程内容的
+    await setup_graphiti(settings)
+    
+    # 8. 记录启动信息
     logger = get_logger(__name__)
     logger.info(f"应用启动 | 环境: {ctx.profile} | 机器ID: {ctx.machine_id}")
     logger.debug(f"配置加载完成: {settings}")

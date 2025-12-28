@@ -5,3 +5,10 @@ log:
   level: "INFO"
   file: "logs/athena.log"
   console-output: true
+
+graphiti:
+  neo4j:
+    uri: "bolt://localhost:7687"
+    user: "neo4j"
+    password: "abcd1234"
+  auto-init-indices: true

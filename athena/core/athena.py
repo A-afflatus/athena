@@ -7,37 +7,24 @@ Athena 核心类
 from __future__ import annotations
 
 import uuid
+from typing import cast
 
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.prompts import ChatPromptTemplate
-from langgraph.runtime import Runtime
-from pydantic import SecretStr
-
-from athena.config.settings import get_settings
-from athena.config.logger import get_logger
-from langchain_qwq import ChatQwen
-from langchain.agents import AgentState, create_agent
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.store.memory import InMemoryStore
+from langchain.agents import create_agent
 from langchain.agents.middleware import (
     ModelRequest,
     SummarizationMiddleware,
-    before_agent,
     dynamic_prompt,
 )
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.store.memory import InMemoryStore
 
-from typing import Any, cast
-from pydantic import BaseModel, Field
-from langchain.agents.middleware.types import AgentMiddleware
-
-from langchain_mcp_adapters.client import MultiServerMCPClient
-from athena.config.settings import get_settings
+from athena.config.logger import get_logger
 from athena.core.entity.entity import DialogueContext, DialogueState
 from athena.core.middleware.intention_recognition import IntentionRecognitionMiddleware
 from athena.core.middleware.tool_selection import ToolSelectionMiddleware
-from athena.core.tools.mcp import init_mcp_tools
 from athena.core.tools.tools import init_tools
-
+from model.models import init_model
 
 logger = get_logger(__name__)
 # region 服务标准
@@ -251,37 +238,18 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
 class Athena:
     def __init__(self):
         super().__init__()
-        self.settings = get_settings()
 
     def init_llm(self):
         """初始化模型"""
         # 核心llm - 用于对话，需要高质量理解和自然表达
-        self.admin_llm = ChatQwen(
-            model="qwen3-max",
-            temperature=0.7,  # 提高温度以获得更自然、更有创造性的对话
-            enable_thinking=False,  # 启用思考能力，提升推理质量
-            api_key=SecretStr(self.settings.get("llm.qwen.api-key")),
-            base_url=self.settings.get("llm.qwen.base-url"),
-            verbose=self.settings.get("is-debug"),
-            model_kwargs={"extra_body": {"enable_search": True}},  # 启用千问自带的联网搜索功能
+        self.admin_llm = init_model(
+            model="qwen3-max", temperature=0.7, model_kwargs={"extra_body": {"enable_search": True}}
         )
         # 意图识别llm
-        self.intention_llm = ChatQwen(
-            model="qwen-flash",
-            temperature=0.1,  # 降低温度以确保总结的准确性和一致性
-            enable_thinking=False,  # 总结任务不需要复杂推理，保持速度
-            api_key=SecretStr(self.settings.get("llm.qwen.api-key")),
-            base_url=self.settings.get("llm.qwen.base-url"),
-            verbose=self.settings.get("is-debug"),
-        )
+        self.intention_llm = init_model(model="qwen-flash", temperature=0.1)
         # 总结llm - 用于上下文摘要，需要快速且准确
-        self.summarization_llm = ChatQwen(
-            model="qwen-plus",
-            temperature=0.1,  # 降低温度以确保总结的准确性和一致性
-            enable_thinking=True,  # 总结任务不需要复杂推理，保持速度
-            api_key=SecretStr(self.settings.get("llm.qwen.api-key")),
-            base_url=self.settings.get("llm.qwen.base-url"),
-            verbose=self.settings.get("is-debug"),
+        self.summarization_llm = init_model(
+            model="qwen-plus", enable_thinking=True, temperature=0.1
         )
 
     async def init(self):
@@ -313,7 +281,6 @@ class Athena:
                 tool_selection_middleware,  # 工具选择（必须在意图识别之后）
                 SummarizationMiddleware(model=self.summarization_llm),  # 上下文摘要
             ],
-            debug=self.settings.get("is-debug"),
         )
 
     async def dialogue(self):
@@ -337,21 +304,18 @@ class Athena:
                 ),
                 version="v2",
             ):
-              # logger.warning(f"event: {event}")
-              if event.get("event") == "on_chat_model_stream":
-                  chunk = event.get("data", {}).get("chunk")
-                  if chunk and hasattr(chunk, "content"):
-                      print(f"\033[34m{chunk.content}\033[0m", end="", flush=True)
+                # logger.warning(f"event: {event}")
+                if event.get("event") == "on_chat_model_stream":
+                    chunk = event.get("data", {}).get("chunk")
+                    if chunk and hasattr(chunk, "content"):
+                        print(f"\033[34m{chunk.content}\033[0m", end="", flush=True)
             print()
-            
+
             # 检查退出标志
             state = self.agent.get_state(config)
             if state.values.get("should_exit", False):
                 logger.info("用户请求退出，结束对话")
                 break
-
-
- 
 
             # 流程流
             # on_chain_start
