@@ -22,5 +22,5 @@ class DialogueContext(BaseModel):
 
 class DialogueState(AgentState):
     """对话状态"""
-    should_exit: bool = Field(description="是否应该退出对话",default=False)
-    user_intention: list[str] | None = Field(description="用户意图类型列表，可能包含多个意图", default=None)
+    should_exit: bool # 是否应该退出对话
+    user_intention: list[str] | None # 用户意图类型列表，可能包含多个意图

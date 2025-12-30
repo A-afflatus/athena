@@ -16,13 +16,13 @@ import signal
 import sys
 from typing import TYPE_CHECKING
 
-from athena.bootstrap import bootstrap
-from athena.config.logger import get_logger
-from athena.core.athena import Athena
+from config.bootstrap import bootstrap
+from config.logger import get_logger
+from athena.athena import Athena
 from middleware.graphiti import close_graphiti
 
 if TYPE_CHECKING:
-    from athena.bootstrap import AppContext
+    from config.bootstrap import AppContext
 
 
 class Application:

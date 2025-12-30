@@ -1,5 +1,5 @@
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from athena.config.settings import get_settings
+from config.settings import get_settings
 
 
 async def init_mcp_tools():

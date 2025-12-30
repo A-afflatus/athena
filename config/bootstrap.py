@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 
-from athena.config.logger import get_logger, setup_logger
-from athena.config.settings import settings
+from config.logger import get_logger, setup_logger
+from config.settings import settings
 from middleware.graphiti import setup_graphiti
 
 if TYPE_CHECKING:

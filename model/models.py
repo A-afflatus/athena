@@ -16,13 +16,13 @@ def init_model(
     model: str = "qwen-flash",
     enable_thinking: bool = False,
     **kwargs: Any,
-) -> BaseChatModel | None:
+) -> BaseChatModel:
     match model:
         case "qwen3-max":
             return ChatQwen(
                 model="qwen3-max",
                 enable_thinking=enable_thinking,
-                api_key=SecretStr(api_key),
+                api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,
                 **kwargs,
             )
@@ -30,7 +30,7 @@ def init_model(
             return ChatQwen(
                 model="qwen-flash",
                 enable_thinking=enable_thinking,
-                api_key=SecretStr(api_key),
+                api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,
                 **kwargs,
             )
@@ -38,7 +38,7 @@ def init_model(
             return ChatQwen(
                 model="qwen-plus",
                 enable_thinking=enable_thinking,
-                api_key=SecretStr(api_key),
+                api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,
                 **kwargs,
             )

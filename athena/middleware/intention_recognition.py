@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any, cast, override
 
 from langchain.agents import create_agent
@@ -17,8 +16,8 @@ from langgraph.runtime import Runtime
 from langgraph.store.base import BaseStore
 from pydantic import BaseModel, Field
 
-from athena.config.logger import get_logger
-from athena.core.entity.entity import DialogueContext, DialogueState, IntentionType
+from config.logger import get_logger
+from athena.entity.entity import DialogueContext, DialogueState, IntentionType
 
 logger = get_logger(__name__)
 

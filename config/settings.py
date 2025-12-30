@@ -13,7 +13,7 @@ from typing import Any, TypeVar, overload
 
 import yaml
 
-from athena.utils.collections import deep_merge
+from utils.collections import deep_merge
 
 T = TypeVar("T")
 

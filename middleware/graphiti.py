@@ -19,7 +19,7 @@ from graphiti_core.llm_client import LLMConfig
 from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
 from pydantic import SecretStr
 
-from athena.config.settings import Settings
+from config.settings import Settings
 
 if TYPE_CHECKING:
     pass
@@ -76,14 +76,14 @@ class GraphitiConfig:
             user=self.neo4j_user,
             password=self.neo4j_password,
             llm_client=OpenAIGenericClient(config=LLMConfig(
-                api_key=SecretStr(os.getenv("LLM_QWEN_API_KEY")),
+                api_key=SecretStr(os.getenv("LLM_QWEN_API_KEY")), # type: ignore
                 model="qwen-flash",
                 small_model="qwen-flash",
                 base_url=os.getenv("LLM_QWEN_BASE_URL"),
             )),
             embedder=OpenAIEmbedder(
                 config=OpenAIEmbedderConfig(
-                    api_key=SecretStr(os.getenv("LLM_QWEN_API_KEY")),
+                    api_key=SecretStr(os.getenv("LLM_QWEN_API_KEY")), # type: ignore
                     embedding_model="qwen2.5-vl-embedding",
                     base_url=os.getenv("LLM_QWEN_BASE_URL"),
                 )

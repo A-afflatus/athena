@@ -19,11 +19,11 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
-from athena.config.logger import get_logger
-from athena.core.entity.entity import DialogueContext, DialogueState
-from athena.core.middleware.intention_recognition import IntentionRecognitionMiddleware
-from athena.core.middleware.tool_selection import ToolSelectionMiddleware
-from athena.core.tools.tools import init_tools
+from config.logger import get_logger
+from athena.entity.entity import DialogueContext, DialogueState
+from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
+from athena.middleware.tool_selection import ToolSelectionMiddleware
+from athena.tools.tools import init_tools
 from model.models import init_model
 
 logger = get_logger(__name__)
@@ -293,7 +293,7 @@ class Athena:
             config = {"configurable": {"thread_id": thread_id}}
             async for event in self.agent.astream_events(
                 {"messages": [HumanMessage(content=user_input)]},
-                config,
+                config=config, # type: ignore
                 context=DialogueContext(
                     thread_id=thread_id,
                     user_id="root",
@@ -312,7 +312,7 @@ class Athena:
             print()
 
             # 检查退出标志
-            state = self.agent.get_state(config)
+            state = self.agent.get_state(config) # type: ignore
             if state.values.get("should_exit", False):
                 logger.info("用户请求退出，结束对话")
                 break

@@ -21,12 +21,12 @@ def init_embedding_model(
         case "qwen2.5-vl-embedding":
             return DashScopeMultiModalEmbeddings(
                 model="qwen2.5-vl-embedding",
-                api_key=SecretStr(qwen_api_key),
+                api_key=SecretStr(qwen_api_key), # type: ignore
             )
         case "Doubao-embedding":
             return VolcEngineMultimodalEmbedding(
                 model="Doubao-embedding",
-                api_key=SecretStr(volcengine_api_key),
+                api_key=SecretStr(volcengine_api_key), # type: ignore
             )
         case _:
             raise ValueError(f"Invalid model: {model}")
