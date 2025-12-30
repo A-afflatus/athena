@@ -18,6 +18,7 @@ class DialogueContext(BaseModel):
     user_gender: str | None = Field(description="用户性别", default=None)
     user_location: str = Field(description="用户当前位置", default="未知")
     user_message: str | None = Field(description="用户消息", default=None)
+    long_term_memory: list[str] | None = Field(description="长期记忆", default=None)
 
 
 class DialogueState(AgentState):

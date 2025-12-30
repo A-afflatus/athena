@@ -59,7 +59,7 @@ class Settings:
         if config_dir is None:
             # 默认配置文件目录：项目根目录下的 configs/
             # athena/config/settings.py -> athena/config -> athena -> 项目根目录
-            project_root = Path(__file__).parent.parent.parent
+            project_root = Path(__file__).parent.parent
             config_dir = project_root / "configs"
         
         self._profile = profile

@@ -15,6 +15,8 @@ base_url = os.getenv("LLM_QWEN_BASE_URL")
 def init_model(
     model: str = "qwen-flash",
     enable_thinking: bool = False,
+    model_kwargs: dict[str, Any] = {},
+    extra_body: dict[str, Any] = {},
     **kwargs: Any,
 ) -> BaseChatModel:
     match model:
@@ -24,6 +26,8 @@ def init_model(
                 enable_thinking=enable_thinking,
                 api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,
+                model_kwargs=model_kwargs,
+                extra_body=extra_body,
                 **kwargs,
             )
         case "qwen-flash":
@@ -32,6 +36,8 @@ def init_model(
                 enable_thinking=enable_thinking,
                 api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,
+                model_kwargs=model_kwargs,
+                extra_body=extra_body,
                 **kwargs,
             )
         case "qwen-plus":
@@ -40,6 +46,8 @@ def init_model(
                 enable_thinking=enable_thinking,
                 api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,
+                model_kwargs=model_kwargs,
+                extra_body=extra_body,
                 **kwargs,
             )
         case _:

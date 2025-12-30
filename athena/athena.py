@@ -19,6 +19,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
+from athena.middleware.memory import MemoryMiddleware
 from config.logger import get_logger
 from athena.entity.entity import DialogueContext, DialogueState
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
@@ -31,7 +32,7 @@ logger = get_logger(__name__)
 
 # 主人
 owner_service_standard = """
-## 1. 对**主人**（服务对象/主要用户）
+## 当前服务对象为主人
 - **核心定位**：专业、忠诚、贴身的数字管家
 - **称呼方式**：
   - 默认“Sir”或主人指定的专属称呼
@@ -51,7 +52,7 @@ owner_service_standard = """
 """
 # 熟人
 acquaintance_service_standard = """
-## 2. 对**熟人**（主人的亲友、常往来的同事等）
+## 当前服务对象为熟人
 - **核心定位**：代表主人的专业助理
 - **称呼方式**：
   - “[姓氏]+先生/女士”或主人指示的称呼
@@ -72,7 +73,7 @@ acquaintance_service_standard = """
 """
 # 陌生客人
 guest_service_standard = """
-## 3. 对**陌生客人**（临时访客、服务提供者等）
+## 当前服务对象为陌生客人
 - **核心定位**：礼貌的门户管理者
 - **称呼方式**：
   - 通用尊称“先生/女士/这位客人”
@@ -94,7 +95,7 @@ guest_service_standard = """
 """
 # 完全陌生的人
 stranger_service_standard = """
-## 4. 对**完全陌生的人**（无关第三方、推销、未知来电等）
+## 当前服务对象为完全陌生的人
 - **核心定位**：主人的第一道过滤网
 - **称呼方式**：
   - 通用“您好”
@@ -160,7 +161,8 @@ system_prompt_template = """
 性别:{user_gender}
 姓名:{user_name}
 位置:{user_location}
-{service_standard}
+服务标准:{service_standard}
+与服务对象的过往:{long_term_memory}
 
 ## 跨类别通用原则
 
@@ -194,6 +196,9 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
     user_name = context.user_name  # type: ignore
     user_gender = context.user_gender  # type: ignore
     user_location = context.user_location  # type: ignore
+    long_term_memory = (
+        "\n".join(context.long_term_memory) if context.long_term_memory else ""
+    )
     if "主人" == user_type:
         return system_prompt_template.format(
             user_type="主人",
@@ -201,6 +206,7 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
             user_gender=user_gender,
             user_location=user_location,
             service_standard=owner_service_standard,
+            long_term_memory=long_term_memory,
         )
     if "熟人" == user_type:
         return system_prompt_template.format(
@@ -209,6 +215,7 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
             user_gender=user_gender,
             user_location=user_location,
             service_standard=acquaintance_service_standard,
+            long_term_memory=long_term_memory,
         )
     if "客人" == user_type:
         return system_prompt_template.format(
@@ -217,6 +224,7 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
             user_gender=user_gender,
             user_location=user_location,
             service_standard=guest_service_standard,
+            long_term_memory=long_term_memory,
         )
     return system_prompt_template.format(
         user_type="陌生人",
@@ -224,6 +232,7 @@ def dynamic_system_prompt(request: ModelRequest) -> str:
         user_gender=user_gender,
         user_location=user_location,
         service_standard=stranger_service_standard,
+        long_term_memory=long_term_memory,
     )
 
 
@@ -243,7 +252,7 @@ class Athena:
         """初始化模型"""
         # 核心llm - 用于对话，需要高质量理解和自然表达
         self.admin_llm = init_model(
-            model="qwen3-max", temperature=0.7, model_kwargs={"extra_body": {"enable_search": True}}
+            model="qwen3-max", temperature=0.7, extra_body={"enable_search": True}
         )
         # 意图识别llm
         self.intention_llm = init_model(model="qwen-flash", temperature=0.1)
@@ -251,36 +260,43 @@ class Athena:
         self.summarization_llm = init_model(
             model="qwen-plus", enable_thinking=True, temperature=0.1
         )
+    async def init_middleware(self):
+        """初始化中间件"""
+
+        # 意图识别中间件
+        intention_middleware = IntentionRecognitionMiddleware(llm=self.intention_llm)
+        # 工具
+        tools = await init_tools()
+        # 工具选择中间件（根据意图动态调整工具）
+        tool_selection_middleware = ToolSelectionMiddleware(all_tools=tools)
+        # 记忆中间件
+        memory_middleware = MemoryMiddleware()
+        return [
+            memory_middleware,  # 记忆中间件
+            intention_middleware,  # 意图识别
+            tool_selection_middleware,  # 工具选择（必须在意图识别之后）
+            dynamic_system_prompt, # 动态系统提示词
+            SummarizationMiddleware(model=self.summarization_llm) # 上下文摘要
+        ]
 
     async def init(self):
         """初始化agent"""
         # 初始化模型
         self.init_llm()
-        # 工具
-        tools = await init_tools()
         # 短期记忆
         memory = InMemorySaver()
         # 属性存储 命名空间+键值对的方式
         self.store = InMemoryStore()
-
-        # 意图识别中间件
-        intention_middleware = IntentionRecognitionMiddleware(llm=self.intention_llm)
-        # 工具选择中间件（根据意图动态调整工具）
-        tool_selection_middleware = ToolSelectionMiddleware(all_tools=tools)
+        # 中间件
+        middleware = await self.init_middleware()
 
         self.agent = create_agent(
             model=self.admin_llm,
-            tools=tools,
             checkpointer=memory,
             store=self.store,
             context_schema=DialogueContext,  # 单伦上下文
             state_schema=DialogueState,  # 多伦对话状态
-            middleware=[  # type: ignore
-                dynamic_system_prompt,  # 动态系统提示词
-                intention_middleware,  # 意图识别
-                tool_selection_middleware,  # 工具选择（必须在意图识别之后）
-                SummarizationMiddleware(model=self.summarization_llm),  # 上下文摘要
-            ],
+            middleware=middleware,
         )
 
     async def dialogue(self):
@@ -288,12 +304,14 @@ class Athena:
         thread_id = str(uuid.uuid4())
         while True:
             user_input = input("你：")
+            if user_input == "exit":
+                break
             if not user_input.strip():
                 continue
             config = {"configurable": {"thread_id": thread_id}}
             async for event in self.agent.astream_events(
                 {"messages": [HumanMessage(content=user_input)]},
-                config=config, # type: ignore
+                config=config,  # type: ignore
                 context=DialogueContext(
                     thread_id=thread_id,
                     user_id="root",
@@ -312,7 +330,7 @@ class Athena:
             print()
 
             # 检查退出标志
-            state = self.agent.get_state(config) # type: ignore
+            state = self.agent.get_state(config)  # type: ignore
             if state.values.get("should_exit", False):
                 logger.info("用户请求退出，结束对话")
                 break

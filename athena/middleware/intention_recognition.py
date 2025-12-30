@@ -70,7 +70,8 @@ class IntentionRecognitionMiddleware(AgentMiddleware[DialogueState, DialogueCont
         if not messages or len(messages) == 0:
             return None
         user_message = messages[-1].content
-        response = self.agent.invoke({"messages": [HumanMessage(content=user_message)]})
+        req_mes = f"长期记忆:{runtime.context.long_term_memory}\n用户消息:{user_message}"
+        response = self.agent.invoke({"messages": [HumanMessage(content=req_mes)]})
         intention_response = cast(IntentionResponse, response['structured_response'])
         intentions = intention_response.user_intentions
         

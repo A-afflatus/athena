@@ -24,7 +24,7 @@ from dotenv import load_dotenv
 
 from config.logger import get_logger, setup_logger
 from config.settings import settings
-from middleware.graphiti import setup_graphiti
+# from middleware.graphiti import setup_graphiti
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -159,7 +159,7 @@ async def bootstrap(args: Namespace | None = None) -> AppContext:
     )
     
     # 7. 初始化 Graphiti 这里先把settings传过去，todo 理论上不应该让组件关心工程内容的
-    await setup_graphiti(settings)
+    # await setup_graphiti(settings)
     
     # 8. 记录启动信息
     logger = get_logger(__name__)
