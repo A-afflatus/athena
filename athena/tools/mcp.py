@@ -1,16 +1,15 @@
+import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from config.settings import get_settings
-
 
 async def init_mcp_tools():
-    settings = get_settings()
+    
     """初始化mcp工具"""
     mcp_client = MultiServerMCPClient(
         {
             # 高德mcp工具
             "amap": {
                 "transport": "streamable_http",
-                "url": f"https://mcp.amap.com/mcp?key={settings.get('mcp.amap.key')}",
+                "url": f"https://mcp.amap.com/mcp?key={os.getenv('MCP_AMAP_KEY')}",
             },
             # * 经测试，这个websearch机器不准确 千问模型自带联网搜索，就不在这里设置mcp工具了
             # "bing-web-search": {

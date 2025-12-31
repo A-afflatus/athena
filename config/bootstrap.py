@@ -17,14 +17,12 @@ import argparse
 import platform
 import uuid
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 
 from config.logger import get_logger, setup_logger
-from config.settings import settings
-# from middleware.graphiti import setup_graphiti
+from middleware.graphiti import setup_graphiti
 
 if TYPE_CHECKING:
     from argparse import Namespace
@@ -40,11 +38,9 @@ class AppContext:
     Attributes:
         profile: 运行环境 (dev, prod, test)
         machine_id: 机器唯一标识
-        debug: 是否为调试模式
     """
     profile: str = "dev"
     machine_id: str = field(default_factory=lambda: _generate_machine_id())
-    debug: bool = False
     
     def __post_init__(self) -> None:
         """初始化后的验证和处理"""
@@ -77,33 +73,13 @@ def parse_arguments() -> Namespace:
         epilog="Copyright © 2025",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    
+
     parser.add_argument(
         "--profile", "-p",
         default="dev",
-        choices=["dev", "prod", "test"],
+        choices=["dev", "test", "prod"],
         help="运行环境配置 (default: dev)",
     )
-    
-    parser.add_argument(
-        "--debug", "-d",
-        action="store_true",
-        help="启用调试模式",
-    )
-    
-    parser.add_argument(
-        "--config-dir",
-        type=Path,
-        default=None,
-        help="配置文件目录路径",
-    )
-    
-    parser.add_argument(
-        "--log-level",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-        help="覆盖配置文件中的日志级别",
-    )
-    
     return parser.parse_args()
 
 
@@ -136,34 +112,21 @@ async def bootstrap(args: Namespace | None = None) -> AppContext:
     # 3. 创建应用上下文
     ctx = AppContext(
         profile=args.profile,
-        debug=args.debug,
     )
-    
-    # 4. 加载配置文件
-    settings.load(
-        profile=ctx.profile,
-        config_dir=args.config_dir,
-    )
-    
-    # 5. 确定日志级别（命令行参数优先）
-    log_level = args.log_level or settings.get("log.level", "INFO")
-    if ctx.debug:
-        log_level = "DEBUG"
     
     # 6. 初始化日志系统
     setup_logger(
-        log_level=log_level,
-        log_file=settings.get("log.file", "logs/athena.log"),
+        log_level="INFO",
+        log_file="logs/athena.log",
         machine_id=ctx.machine_id,
-        console_output=settings.get("log.console-output", True),
+        console_output=True,
     )
     
-    # 7. 初始化 Graphiti 这里先把settings传过去，todo 理论上不应该让组件关心工程内容的
-    # await setup_graphiti(settings)
+    # 7. 初始化 Graphiti 
+    await setup_graphiti()
     
     # 8. 记录启动信息
     logger = get_logger(__name__)
     logger.info(f"应用启动 | 环境: {ctx.profile} | 机器ID: {ctx.machine_id}")
-    logger.debug(f"配置加载完成: {settings}")
     
     return ctx
