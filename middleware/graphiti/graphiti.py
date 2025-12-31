@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from graphiti_core import Graphiti
-from graphiti_core.cross_encoder import OpenAIRerankerClient
-from graphiti_core.embedder import OpenAIEmbedder, OpenAIEmbedderConfig
-from graphiti_core.llm_client import LLMConfig
-from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
+from langchain_openai.chat_models.base import BaseChatOpenAI
+
+from middleware.graphiti.adapter import LangchainEmbedder, LangchainGenericClient, LangchainReranker
+from model.embedding import init_embedding_model
+from model.models import init_model
 
 if TYPE_CHECKING:
     pass
@@ -64,26 +65,9 @@ class GraphitiConfig:
             uri=self.neo4j_uri,
             user=self.neo4j_user,
             password=self.neo4j_password,
-            llm_client=OpenAIGenericClient(config=LLMConfig(
-                api_key=os.getenv("LLM_QWEN_API_KEY") or "",
-                model="qwen-flash",
-                small_model="qwen-flash",
-                base_url=os.getenv("LLM_QWEN_BASE_URL"),
-            )),
-            embedder=OpenAIEmbedder(
-                config=OpenAIEmbedderConfig(
-                    api_key=os.getenv("LLM_QWEN_API_KEY") or "",
-                    embedding_model="qwen2.5-vl-embedding",
-                    base_url=os.getenv("LLM_QWEN_BASE_URL"),
-                )
-            ),
-            cross_encoder=OpenAIRerankerClient(
-                config=LLMConfig(
-                    api_key=os.getenv("LLM_QWEN_API_KEY") or "",
-                    model="qwen-flash",
-                    base_url=os.getenv("LLM_QWEN_BASE_URL"),
-                )
-            )
+            llm_client=LangchainGenericClient(init_model("qwen-flash")),
+            embedder=LangchainEmbedder(init_embedding_model("doubao-embedding-vision-250615")),
+            cross_encoder=LangchainReranker(cast(BaseChatOpenAI, init_model("qwen-flash"))),
             # todo trace 集成
         )
 
@@ -98,7 +82,9 @@ class GraphitiConfig:
             logger.error(f"初始化 Graphiti 索引和约束失败: {e}")
             raise e
 
-        logger.info(f"Graphiti 配置完成 | URI: {self.neo4j_uri} | User: {self.neo4j_user}")
+        logger.info(
+            f"Graphiti 配置完成 | URI: {self.neo4j_uri} | User: {self.neo4j_user}"
+        )
 
     async def close(self) -> None:
         """关闭 Graphiti 连接"""

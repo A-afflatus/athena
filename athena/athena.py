@@ -99,20 +99,20 @@ class Athena:
             async for event in self.agent.astream_events(
                 {"messages": [HumanMessage(content=user_input)]},
                 config=config,  # type: ignore
-                # context=DialogueContext(
-                #     thread_id=thread_id,
-                #     user_id="root",
-                #     user_type=UserType.OWNER,
-                #     user_name="汪京",
-                #     user_gender=UserGender.MALE,
-                #     user_location="北京市亦庄经济开发区",
-                # ),
                 context=DialogueContext(
                     thread_id=thread_id,
-                    user_id="3333",
-                    user_type=UserType.STRANGER,
+                    user_id="root",
+                    user_type=UserType.OWNER,
+                    user_name="汪京",
                     user_gender=UserGender.MALE,
+                    user_location="北京市亦庄经济开发区",
                 ),
+                # context=DialogueContext(
+                #     thread_id=thread_id,
+                #     user_id="3333",
+                #     user_type=UserType.STRANGER,
+                #     user_gender=UserGender.MALE,
+                # ),
                 version="v2",
             ):
                 # logger.warning(f"event: {event}")

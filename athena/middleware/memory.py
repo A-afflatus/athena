@@ -1,13 +1,14 @@
 from datetime import datetime
 import os
 import threading
-from typing import Any, override
+from typing import Any, cast, override
 from langgraph.runtime import Runtime
-from mem0 import MemoryClient
 from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.messages import HumanMessage, AIMessage
 from athena.context import DialogueState, DialogueContext
 from config.logger import get_logger
+from mem0 import MemoryClient
+from middleware.graphiti.graphiti import get_graphiti
 
 logger = get_logger(__name__)
 
@@ -17,29 +18,27 @@ class UserMemoryMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
         api_key = os.getenv("MEM0_API_KEY")
         if not api_key:
             raise ValueError("MEM0_API_KEY 环境变量未设置")
+        # 对话记忆
         self.memory = MemoryClient(api_key=api_key)
+        # todo 这个应该是另一个中间件图知识库
+        self.graphiti = get_graphiti()
 
     @override
-    def before_agent(
+    async def abefore_agent(
         self, state: DialogueState, runtime: Runtime[DialogueContext]
     ) -> dict[str, Any] | None:
         """在 Agent 运行前：检索记忆"""
-        long_term_memory = state.get("long_term_memory", [])
-        # 一次多轮会话只检索一次长期记忆
-        if long_term_memory is not None and len(long_term_memory) > 0:
-            return None
-
         messages = state.get("messages", [])
         if not messages:
             return None
 
-        user_query = messages[-1].content
+        user_query = cast(str, messages[-1].content)
 
         user_id = runtime.context.user_id
         filters = {"OR": [{"user_id": user_id}]}
 
         # 检索相关事实
-        relevant_memories = self.memory.search(user_query, top_k=100, filters=filters)  # type: ignore
+        relevant_memories = self.memory.search(user_query, top_k=10, filters=filters)  # type: ignore
         # 将记忆格式化后存入 context，后续可以通过 dynamic_prompt 注入到系统提示词
         if relevant_memories:
             facts = [
@@ -64,6 +63,7 @@ class UserMemoryMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
     @override
     def after_agent(self, state: DialogueState, runtime: Any) -> None:
         """在 Agent 结束后：存储记忆"""
+        # todo 不应该每次都储存记忆，应该结束的时候 和 断开的时候存储
         messages = state.get("messages", [])
         user_id = runtime.context.user_id
         # 至少要有用户消息和 AI 回复

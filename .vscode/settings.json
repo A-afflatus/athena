@@ -1,5 +1,9 @@
 {
     "cSpell.words": [
+        "abefore",
+        "aembed",
+        "agenerate",
+        "ainvoke",
         "amap",
         "astream",
         "awrap",
@@ -11,6 +15,7 @@
         "msecs",
         "Multimodal",
         "qwen",
+        "Reranker",
         "signum",
         "streamable",
         "volcengine",

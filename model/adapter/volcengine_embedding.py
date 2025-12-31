@@ -17,7 +17,7 @@ class VolcEngineMultimodalEmbedding(Embeddings):
         model: str,
     ):
         self.model = model
-        self.client = Ark(api_key=SecretStr(api_key)) # type: ignore
+        self.client = Ark(api_key=api_key)
 
     @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -30,9 +30,7 @@ class VolcEngineMultimodalEmbedding(Embeddings):
     @override
     def embed_query(self, text: str) -> list[float]:
         resp = self.client.multimodal_embeddings.create(
-                model=self.model,
-                input=[MultimodalEmbeddingContentPartTextParam(text=text)], # type: ignore
-            )
+            model=self.model,
+            input=[MultimodalEmbeddingContentPartTextParam(text=text, type="text")],
+        )
         return resp.data.embedding
-
-

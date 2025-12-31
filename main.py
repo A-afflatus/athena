@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from config.bootstrap import bootstrap
 from config.logger import get_logger
 from athena.athena import Athena
-from middleware.graphiti import close_graphiti
+from middleware.graphiti.graphiti import close_graphiti
 
 if TYPE_CHECKING:
     from config.bootstrap import AppContext

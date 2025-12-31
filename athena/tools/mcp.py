@@ -1,8 +1,8 @@
 import os
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
+
 async def init_mcp_tools():
-    
     """初始化mcp工具"""
     mcp_client = MultiServerMCPClient(
         {
