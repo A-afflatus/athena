@@ -20,10 +20,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "python-dotenv>=1.0.0", # 环境变量管理
-    "pyyaml>=6.0.0", # YAML 配置解析
-    "fastapi>=0.125.0", # Web 框架
-    "uvicorn>=0.32.0", # ASGI 服务器
+    "python-dotenv>=1.0.0",
     "langchain[openai]>=1.2.0",
     "langchain-qwq>=0.3.1",
     "langchain-deepseek>=1.0.1",

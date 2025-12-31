@@ -13,6 +13,7 @@ import os
 from typing import TYPE_CHECKING
 
 from graphiti_core import Graphiti
+from graphiti_core.cross_encoder import OpenAIRerankerClient
 from graphiti_core.embedder import OpenAIEmbedder, OpenAIEmbedderConfig
 from graphiti_core.llm_client import LLMConfig
 from graphiti_core.llm_client.openai_generic_client import OpenAIGenericClient
@@ -75,15 +76,27 @@ class GraphitiConfig:
                     embedding_model="qwen2.5-vl-embedding",
                     base_url=os.getenv("LLM_QWEN_BASE_URL"),
                 )
+            ),
+            cross_encoder=OpenAIRerankerClient(
+                config=LLMConfig(
+                    api_key=os.getenv("LLM_QWEN_API_KEY") or "",
+                    model="qwen-flash",
+                    base_url=os.getenv("LLM_QWEN_BASE_URL"),
+                )
             )
             # todo trace 集成
         )
 
         GraphitiConfig._configured = True
 
-        logger.info("正在初始化 Graphiti 索引和约束...")
-        await self.graphiti.build_indices_and_constraints()
-        logger.info("Graphiti 索引和约束初始化完成")
+        try:
+            logger.info("正在初始化 Graphiti 索引和约束...")
+            await self.graphiti.build_indices_and_constraints()
+            logger.info("Graphiti 索引和约束初始化完成")
+        except Exception as e:
+            await self.graphiti.close()
+            logger.error(f"初始化 Graphiti 索引和约束失败: {e}")
+            raise e
 
         logger.info(f"Graphiti 配置完成 | URI: {self.neo4j_uri} | User: {self.neo4j_user}")
 
