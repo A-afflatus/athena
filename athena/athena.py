@@ -7,6 +7,7 @@ Athena 核心类
 from __future__ import annotations
 
 import uuid
+
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
     SummarizationMiddleware,
@@ -15,14 +16,14 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
-from athena.middleware.dichotomy_prompts import dynamic_system_prompt
-from athena.middleware.memory import UserMemoryMiddleware
-from athena.tools.base import BaseToolEntity
-from config.logger import get_logger
 from athena.context import DialogueContext, DialogueState, UserGender, UserType
+from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
+from athena.middleware.memory import UserMemoryMiddleware
 from athena.middleware.tool_selection import ToolSelectionMiddleware
+from athena.tools.base import BaseToolEntity
 from athena.tools.tools import init_tools
+from config.logger import get_logger
 from model.models import init_model
 
 logger = get_logger(__name__)
@@ -47,14 +48,13 @@ class Athena:
         )
     async def init_middleware(self, tools: list[BaseToolEntity]):
         """初始化中间件"""
-
         # 意图识别中间件
         intention_middleware = IntentionRecognitionMiddleware(llm=self.intention_llm)
-
         # 工具选择中间件（根据意图动态调整工具）
         tool_selection_middleware = ToolSelectionMiddleware(all_tools=tools)
         # 用户记忆中间件
         user_memory_middleware = UserMemoryMiddleware()
+
         return [
             user_memory_middleware,  # 用户级别记忆
             intention_middleware,  # 意图识别
@@ -127,6 +127,7 @@ class Athena:
             if state.values.get("should_exit", False):
                 logger.info("用户请求退出，结束对话")
                 break
+        # await self.user_memory_middleware.save_memory()
 
             # 流程流
             # on_chain_start

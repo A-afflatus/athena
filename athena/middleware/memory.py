@@ -1,25 +1,21 @@
 from datetime import datetime
-import os
-import threading
 from typing import Any, cast, override
-from langgraph.runtime import Runtime
+
 from langchain.agents.middleware.types import AgentMiddleware
-from langchain_core.messages import HumanMessage, AIMessage
-from athena.context import DialogueState, DialogueContext
+from langgraph.runtime import Runtime
+
+from athena.context import DialogueContext, DialogueState
 from config.logger import get_logger
-from mem0 import MemoryClient
 from middleware.graphiti.graphiti import get_graphiti
+from middleware.mem0.mem0 import get_mem0
 
 logger = get_logger(__name__)
 
 
 class UserMemoryMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
     def __init__(self):
-        api_key = os.getenv("MEM0_API_KEY")
-        if not api_key:
-            raise ValueError("MEM0_API_KEY 环境变量未设置")
         # 对话记忆
-        self.memory = MemoryClient(api_key=api_key)
+        self.memory = get_mem0()
         # todo 这个应该是另一个中间件图知识库
         self.graphiti = get_graphiti()
 
@@ -60,32 +56,3 @@ class UserMemoryMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
             }
         return None
 
-    @override
-    def after_agent(self, state: DialogueState, runtime: Any) -> None:
-        """在 Agent 结束后：存储记忆"""
-        # todo 不应该每次都储存记忆，应该结束的时候 和 断开的时候存储
-        messages = state.get("messages", [])
-        user_id = runtime.context.user_id
-        # 至少要有用户消息和 AI 回复
-        if len(messages) < 2:
-            return
-
-        # 在单独线程中执行，不阻塞主流程
-        threading.Thread(
-            target=self._add_memory_async, args=(messages, user_id), daemon=True
-        ).start()
-
-    def _add_memory_async(self, messages: list, user_id: str) -> None:
-        """异步添加记忆到存储"""
-        try:
-            filtered_messages = []
-            for msg in messages:
-                if isinstance(msg, HumanMessage):
-                    filtered_messages.append({"role": "user", "content": msg.content})
-                elif isinstance(msg, AIMessage) and msg.content != "":
-                    filtered_messages.append(
-                        {"role": "assistant", "content": msg.content}
-                    )
-            self.memory.add(filtered_messages, user_id=user_id)
-        except Exception as e:
-            logger.error(f"异步添加记忆失败: {e}", exc_info=True)

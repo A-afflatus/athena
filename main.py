@@ -16,9 +16,9 @@ import signal
 import sys
 from typing import TYPE_CHECKING
 
+from athena.athena import Athena
 from config.bootstrap import bootstrap
 from config.logger import get_logger
-from athena.athena import Athena
 from middleware.graphiti.graphiti import close_graphiti
 
 if TYPE_CHECKING:
@@ -44,7 +44,7 @@ class Application:
         # _logger 在此方法调用前已初始化
         assert self._logger is not None
         assert self._shutdown_event is not None
-        
+
         profile = self.ctx.profile if self.ctx else "unknown"
         self._logger.info(f"当前运行环境: {profile}")
         # 启动Athena
@@ -55,7 +55,7 @@ class Application:
         # 循环等待控制台输入用户消息，并调用 athena.dialogue，直到收到退出信号
         await athena.dialogue()
 
-        self._shutdown_event.set() # todo 测试用，后续删除
+        self._shutdown_event.set()  # todo 测试用，后续删除
         # 等待关闭事件
         await self._shutdown_event.wait()
 
@@ -64,7 +64,7 @@ class Application:
         try:
             # 在异步上下文中创建事件
             self._shutdown_event = asyncio.Event()
-            
+
             # 引导应用
             self.ctx = await bootstrap()
             self._logger = get_logger(__name__)
@@ -73,7 +73,7 @@ class Application:
             loop = asyncio.get_running_loop()
             for sig in (signal.SIGINT, signal.SIGTERM):
                 loop.add_signal_handler(sig, self._handle_signal, sig)
-            
+
             await self._run()
 
         except KeyboardInterrupt:

@@ -20,29 +20,9 @@ def init_model(
     **kwargs: Any,
 ) -> BaseChatModel:
     match model:
-        case "qwen3-max":
+        case model if model.startswith("qwen"):
             return ChatQwen(
-                model="qwen3-max",
-                enable_thinking=enable_thinking,
-                api_key=SecretStr(api_key), # type: ignore
-                base_url=base_url,
-                model_kwargs=model_kwargs,
-                extra_body=extra_body,
-                **kwargs,
-            )
-        case "qwen-flash":
-            return ChatQwen(
-                model="qwen-flash",
-                enable_thinking=enable_thinking,
-                api_key=SecretStr(api_key), # type: ignore
-                base_url=base_url,
-                model_kwargs=model_kwargs,
-                extra_body=extra_body,
-                **kwargs,
-            )
-        case "qwen-plus":
-            return ChatQwen(
-                model="qwen-plus",
+                model=model,
                 enable_thinking=enable_thinking,
                 api_key=SecretStr(api_key), # type: ignore
                 base_url=base_url,

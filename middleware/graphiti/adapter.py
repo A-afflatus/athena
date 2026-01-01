@@ -1,6 +1,5 @@
 import json
 import logging
-import re
 from collections.abc import Iterable
 from typing import Any, cast, override
 
@@ -8,13 +7,12 @@ import numpy as np
 from graphiti_core.cross_encoder import CrossEncoderClient
 from graphiti_core.embedder import EmbedderClient
 from graphiti_core.helpers import semaphore_gather
-from graphiti_core.llm_client import LLMClient, RateLimitError
-from graphiti_core.llm_client.client import get_extraction_language_instruction
-from graphiti_core.llm_client.config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
+from graphiti_core.llm_client import LLMClient
+from graphiti_core.llm_client.config import DEFAULT_MAX_TOKENS, ModelSize
 from graphiti_core.prompts.models import Message
 from langchain.chat_models import BaseChatModel
 from langchain.embeddings.base import Embeddings
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel
 
@@ -173,8 +171,6 @@ class LangchainReranker(CrossEncoderClient):
         client.top_logprobs = 2
         # 设置客户端
         self.client = client
-        
-        
 
     @override
     async def rank(self, query: str, passages: list[str]) -> list[tuple[str, float]]:

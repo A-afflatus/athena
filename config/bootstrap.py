@@ -32,16 +32,17 @@ if TYPE_CHECKING:
 class AppContext:
     """
     应用上下文
-    
+
     存储应用运行时的关键信息，作为应用状态的统一载体。
-    
+
     Attributes:
         profile: 运行环境 (dev, prod, test)
         machine_id: 机器唯一标识
     """
+
     profile: str = "dev"
     machine_id: str = field(default_factory=lambda: _generate_machine_id())
-    
+
     def __post_init__(self) -> None:
         """初始化后的验证和处理"""
         # 确保 profile 是有效的
@@ -50,6 +51,7 @@ class AppContext:
             logger = get_logger(__name__)
             logger.warning(f"未知的环境配置: {self.profile}，使用 dev 作为默认值")
             self.profile = "dev"
+
 
 # todo 这个现在还不能保证机器号唯一，后续需要优化。
 def _generate_machine_id() -> str:
@@ -75,7 +77,8 @@ def parse_arguments() -> Namespace:
     )
 
     parser.add_argument(
-        "--profile", "-p",
+        "--profile",
+        "-p",
         default="dev",
         choices=["dev", "test", "prod"],
         help="运行环境配置 (default: dev)",
@@ -86,34 +89,34 @@ def parse_arguments() -> Namespace:
 async def bootstrap(args: Namespace | None = None) -> AppContext:
     """
     引导应用启动
-    
+
     执行完整的初始化流程，返回应用上下文。
-    
+
     Args:
         args: 命令行参数，如果为 None 则自动解析
-        
+
     Returns:
         初始化完成的应用上下文
-        
+
     Raises:
         FileNotFoundError: 配置文件不存在时抛出
-        
+
     Example:
         >>> ctx = bootstrap()
         >>> print(f"运行环境: {ctx.profile}")
     """
     # 1. 加载环境变量（.env 文件）
     load_dotenv()
-    
+
     # 2. 解析命令行参数
     if args is None:
         args = parse_arguments()
-    
+
     # 3. 创建应用上下文
     ctx = AppContext(
         profile=args.profile,
     )
-    
+
     # 6. 初始化日志系统
     setup_logger(
         log_level="INFO",
@@ -121,12 +124,12 @@ async def bootstrap(args: Namespace | None = None) -> AppContext:
         machine_id=ctx.machine_id,
         console_output=True,
     )
-    
-    # 7. 初始化 Graphiti 
+
+    # 7. 初始化 Graphiti
     await setup_graphiti()
-    
+
     # 8. 记录启动信息
     logger = get_logger(__name__)
     logger.info(f"应用启动 | 环境: {ctx.profile} | 机器ID: {ctx.machine_id}")
-    
+
     return ctx
