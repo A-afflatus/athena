@@ -96,23 +96,24 @@ class Athena:
             if not user_input.strip():
                 continue
             config = {"configurable": {"thread_id": thread_id}}
-            async for event in self.agent.astream_events(
-                {"messages": [HumanMessage(content=user_input)]},
-                config=config,  # type: ignore
-                context=DialogueContext(
-                    thread_id=thread_id,
-                    user_id="root",
-                    user_type=UserType.OWNER,
-                    user_name="汪京",
-                    user_gender=UserGender.MALE,
-                    user_location="北京市亦庄经济开发区",
-                ),
+            context = DialogueContext(
+                thread_id=thread_id,
+                user_id="root",
+                user_type=UserType.OWNER,
+                user_name="汪京",
+                user_gender=UserGender.MALE,
+                user_location="北京市亦庄经济开发区",
+            )
                 # context=DialogueContext(
                 #     thread_id=thread_id,
                 #     user_id="3333",
                 #     user_type=UserType.STRANGER,
                 #     user_gender=UserGender.MALE,
                 # ),
+            async for event in self.agent.astream_events(
+                {"messages": [HumanMessage(content=user_input)]},
+                config=config,  # type: ignore
+                context=context,
                 version="v2",
             ):
                 # logger.warning(f"event: {event}")
@@ -123,8 +124,7 @@ class Athena:
             print()
 
             # 检查退出标志
-            state = self.agent.get_state(config)  # type: ignore
-            if state.values.get("should_exit", False):
+            if context.should_exit:
                 logger.info("用户请求退出，结束对话")
                 break
         # await self.user_memory_middleware.save_memory()

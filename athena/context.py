@@ -30,7 +30,7 @@ class IntentionType(Enum):
 
 
 class DialogueContext(BaseModel):
-    """用户上下文"""
+    """对话上下文"""
 
     thread_id: str = Field(description="对话ID")
     user_id: str = Field(description="用户ID")
@@ -42,10 +42,9 @@ class DialogueContext(BaseModel):
     user_intention: list[IntentionType] | None = Field(
         description="用户意图类型列表，可能包含多个意图", default=[IntentionType.GENERAL]
     )
+    should_exit: bool = Field(description="是否应该退出对话", default=False)
+    long_term_memory: list[str] = Field(description="用户级长期记忆", default_factory=list)
 
 
 class AthenaState(AgentState):
-    """对话状态"""
-
-    should_exit: bool  # 是否应该退出对话
-    long_term_memory: list[str]  # 用户级长期记忆
+    """代理状态"""

@@ -42,17 +42,18 @@ class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
                 for m in relevant_memories["results"]
             ]
             # 保证一次多轮会话只检索一次长期记忆
+            runtime.context.long_term_memory = (
+                [
+                    f"时间:{m['created_at']}-内容:{m['memory']}"
+                    for m in relevant_memories["results"]
+                ]
+                if len(facts) > 0
+                else [
+                    f"时间:{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}-内容:开始本次对话"
+                ]
+            )
             return {
-                "long_term_memory": (
-                    [
-                        f"时间:{m['created_at']}-内容:{m['memory']}"
-                        for m in relevant_memories["results"]
-                    ]
-                    if len(facts) > 0
-                    else [
-                        f"时间:{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}-内容:开始本次对话"
-                    ]
-                )
+                "context": runtime.context,
             }
         return None
 

@@ -2,7 +2,7 @@ from typing import cast
 
 from langchain.agents.middleware import ModelRequest, dynamic_prompt
 
-from athena.context import AthenaState, DialogueContext, UserType
+from athena.context import DialogueContext, UserType
 from athena.prompt.service_standard import (
     acquaintance_service_standard,
     guest_service_standard,
@@ -16,8 +16,7 @@ from athena.prompt.system import athena_system_prompt_template
 def dynamic_system_prompt(request: ModelRequest) -> str:
     """提示词分化中间件，根据用户类型和用户信息动态生成系统提示词"""
     context = cast(DialogueContext, request.runtime.context)
-    state = cast(AthenaState, request.state)
-    long_term_memory = state.get("long_term_memory", [])
+    long_term_memory = context.long_term_memory
     if UserType.OWNER == context.user_type:
         return _build_prompt(owner_service_standard, context,long_term_memory)
     if UserType.ACQUAINTANCE == context.user_type:

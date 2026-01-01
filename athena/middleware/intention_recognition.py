@@ -100,7 +100,7 @@ class IntentionRecognitionMiddleware(AgentMiddleware[AthenaState, DialogueContex
         logger.info(f"识别到意图: {[intention.value for intention in intentions]}")
         # 更新上下文
         runtime.context.user_intention = intentions
+        runtime.context.should_exit = IntentionType.EXIT in intentions  # 检查是否包含退出意图
         return {
             "context": runtime.context,
-            "should_exit": IntentionType.EXIT in intentions,  # 检查是否包含退出意图
         }
