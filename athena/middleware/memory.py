@@ -4,7 +4,7 @@ from typing import Any, cast, override
 from langchain.agents.middleware.types import AgentMiddleware
 from langgraph.runtime import Runtime
 
-from athena.context import DialogueContext, DialogueState
+from athena.context import AthenaState, DialogueContext
 from config.logger import get_logger
 from middleware.graphiti.graphiti import get_graphiti
 from middleware.mem0.mem0 import get_mem0
@@ -12,7 +12,7 @@ from middleware.mem0.mem0 import get_mem0
 logger = get_logger(__name__)
 
 
-class UserMemoryMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
+class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
     def __init__(self):
         # 对话记忆
         self.memory = get_mem0()
@@ -21,7 +21,7 @@ class UserMemoryMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
 
     @override
     async def abefore_agent(
-        self, state: DialogueState, runtime: Runtime[DialogueContext]
+        self, state: AthenaState, runtime: Runtime[DialogueContext]
     ) -> dict[str, Any] | None:
         """在 Agent 运行前：检索记忆"""
         messages = state.get("messages", [])

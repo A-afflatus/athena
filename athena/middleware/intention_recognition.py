@@ -14,7 +14,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 
-from athena.context import DialogueContext, DialogueState, IntentionType
+from athena.context import AthenaState, DialogueContext, IntentionType
 from config.logger import get_logger
 
 logger = get_logger(__name__)
@@ -50,7 +50,7 @@ class IntentionResponse(BaseModel):
     )
 
 
-class IntentionRecognitionMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
+class IntentionRecognitionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
     """意图识别"""
 
     def __init__(self, llm: Any):
@@ -61,7 +61,7 @@ class IntentionRecognitionMiddleware(AgentMiddleware[DialogueState, DialogueCont
 
     @override
     def before_agent(
-        self, state: DialogueState, runtime: Runtime[DialogueContext]
+        self, state: AthenaState, runtime: Runtime[DialogueContext]
     ) -> dict[str, Any] | None:
         """意图识别"""
         # 会话消息提取

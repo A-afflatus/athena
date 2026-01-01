@@ -16,7 +16,7 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
-from athena.context import DialogueContext, DialogueState, UserGender, UserType
+from athena.context import AthenaState, DialogueContext, UserGender, UserType
 from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
 from athena.middleware.memory import UserMemoryMiddleware
@@ -82,7 +82,7 @@ class Athena:
             checkpointer=memory,
             store=self.store,
             context_schema=DialogueContext,  # 单伦上下文
-            state_schema=DialogueState,  # 多伦对话状态
+            state_schema=AthenaState,  # 实例级别状态
             middleware=middleware,
         )
 

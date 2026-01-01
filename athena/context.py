@@ -44,7 +44,7 @@ class DialogueContext(BaseModel):
     )
 
 
-class DialogueState(AgentState):
+class AthenaState(AgentState):
     """对话状态"""
 
     should_exit: bool  # 是否应该退出对话

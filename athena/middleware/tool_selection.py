@@ -17,7 +17,7 @@ from langchain.agents.middleware.types import (
 )
 from langchain_core.tools import BaseTool
 
-from athena.context import DialogueContext, DialogueState, IntentionType
+from athena.context import AthenaState, DialogueContext, IntentionType
 from athena.tools.base import BaseToolEntity
 from config.logger import get_logger
 
@@ -28,7 +28,7 @@ _tools_group = {
 }
 
 
-class ToolSelectionMiddleware(AgentMiddleware[DialogueState, DialogueContext]):
+class ToolSelectionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
     """根据意图动态选择工具的中间件"""
 
     def __init__(self, all_tools: list[BaseToolEntity]):
