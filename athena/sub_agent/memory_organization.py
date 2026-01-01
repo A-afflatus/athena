@@ -14,10 +14,12 @@ memory_organization_agent = create_agent(
 )
 
 async def save_memory(messages: list[AnyMessage], user_id: str) -> None:
+    if not messages or len(messages) == 0:
+        return
     await _add_memory_async(messages, user_id)
 
 
-async def _add_memory_async(messages: list, user_id: str) -> None:
+async def _add_memory_async(messages: list[AnyMessage], user_id: str) -> None:
     """添加记忆到mem0"""
     mem0 = get_mem0()
     try:

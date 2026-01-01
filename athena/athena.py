@@ -21,6 +21,7 @@ from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
 from athena.middleware.memory import UserMemoryMiddleware
 from athena.middleware.tool_selection import ToolSelectionMiddleware
+from athena.sub_agent.memory_organization import save_memory
 from athena.tools.base import BaseToolEntity
 from athena.tools.tools import init_tools
 from config.logger import get_logger
@@ -29,6 +30,7 @@ from model.models import init_model
 logger = get_logger(__name__)
 
 # ! 通过声色识别用户，识别到了返回识别的部分结果(用于称呼对方)，并更新用户上下文，识别不到提示ai第一次与用户沟通，和用户交流获得用户的基本信息，调用工具新建用户并更新用户上下文#
+
 
 class Athena:
     def __init__(self):
@@ -46,6 +48,7 @@ class Athena:
         self.summarization_llm = init_model(
             model="qwen-plus", enable_thinking=True, temperature=0.1
         )
+
     async def init_middleware(self, tools: list[BaseToolEntity]):
         """初始化中间件"""
         # 意图识别中间件
@@ -59,8 +62,8 @@ class Athena:
             user_memory_middleware,  # 用户级别记忆
             intention_middleware,  # 意图识别
             tool_selection_middleware,  # 工具选择（必须在意图识别之后）
-            dynamic_system_prompt, # 动态系统提示词
-            SummarizationMiddleware(model=self.summarization_llm) # 上下文摘要
+            dynamic_system_prompt,  # 动态系统提示词
+            SummarizationMiddleware(model=self.summarization_llm),  # 上下文摘要
         ]
 
     async def init(self):
@@ -82,32 +85,33 @@ class Athena:
             checkpointer=memory,
             store=self.store,
             context_schema=DialogueContext,  # 单伦上下文
-            state_schema=AthenaState,  # 实例级别状态
+            state_schema=AthenaState,  # 基于thread_id 的多伦对话的状态
             middleware=middleware,
         )
 
     async def dialogue(self):
         """对话"""
         thread_id = str(uuid.uuid4())
+        dialogue_messages = {}
         while True:
             user_input = input("你：")
             if user_input == "exit":
                 break
             if not user_input.strip():
                 continue
+            # context = DialogueContext(
+            #     user_id="root",
+            #     user_type=UserType.OWNER,
+            #     user_name="汪京",
+            #     user_gender=UserGender.MALE,
+            #     user_location="北京市亦庄经济开发区",
+            # )
             context = DialogueContext(
-                user_id="root",
-                user_type=UserType.OWNER,
-                user_name="汪京",
+                user_id="4444",
+                user_type=UserType.STRANGER,
                 user_gender=UserGender.MALE,
-                user_location="北京市亦庄经济开发区",
             )
-            config = {"configurable": {"thread_id": context.user_id+"-"+thread_id}}
-                # context=DialogueContext(
-                #     user_id="3333",
-                #     user_type=UserType.STRANGER,
-                #     user_gender=UserGender.MALE,
-                # ),
+            config = {"configurable": {"thread_id": context.user_id + "-" + thread_id}}
             async for event in self.agent.astream_events(
                 {"messages": [HumanMessage(content=user_input)]},
                 config=config,  # type: ignore
@@ -120,12 +124,17 @@ class Athena:
                     if chunk and hasattr(chunk, "content"):
                         print(f"\033[34m{chunk.content}\033[0m", end="", flush=True)
             print()
-
+            # 存储对话消息
+            dialogue_messages[context.user_id] = self.agent.get_state(config).values.get(
+                "messages", []
+            )
             # 检查退出标志
             if context.should_exit:
                 logger.info("用户请求退出，结束对话")
                 break
-        # await self.user_memory_middleware.save_memory()
+        logger.info("对话结束，保存记忆")
+        for user_id, messages in dialogue_messages.items():
+            await save_memory(messages, user_id)
 
             # 流程流
             # on_chain_start
