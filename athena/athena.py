@@ -95,17 +95,15 @@ class Athena:
                 break
             if not user_input.strip():
                 continue
-            config = {"configurable": {"thread_id": thread_id}}
             context = DialogueContext(
-                thread_id=thread_id,
                 user_id="root",
                 user_type=UserType.OWNER,
                 user_name="汪京",
                 user_gender=UserGender.MALE,
                 user_location="北京市亦庄经济开发区",
             )
+            config = {"configurable": {"thread_id": context.user_id+"-"+thread_id}}
                 # context=DialogueContext(
-                #     thread_id=thread_id,
                 #     user_id="3333",
                 #     user_type=UserType.STRANGER,
                 #     user_gender=UserGender.MALE,

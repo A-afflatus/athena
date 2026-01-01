@@ -32,7 +32,6 @@ class IntentionType(Enum):
 class DialogueContext(BaseModel):
     """对话上下文"""
 
-    thread_id: str = Field(description="对话ID")
     user_id: str = Field(description="用户ID")
     user_type: UserType = Field(description="用户身份类型")
     user_name: str | None = Field(description="用户名称", default=None)
