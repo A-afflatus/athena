@@ -21,7 +21,6 @@ from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
 from athena.middleware.memory import UserMemoryMiddleware
 from athena.middleware.tool_selection import ToolSelectionMiddleware
-from athena.sub_agent.memory_organization import save_memory
 from athena.tools.base import BaseToolEntity
 from athena.tools.tools import init_tools
 from config.logger import get_logger
@@ -46,7 +45,7 @@ class Athena:
         self.intention_llm = init_model(model="qwen-flash", temperature=0.1)
         # 总结llm - 用于上下文摘要，需要快速且准确
         self.summarization_llm = init_model(
-            model="qwen-plus", enable_thinking=True, temperature=0.1
+            model="qwen-flash", enable_thinking=True, temperature=0.1
         )
 
     async def init_middleware(self, tools: list[BaseToolEntity]):
@@ -92,7 +91,6 @@ class Athena:
     async def dialogue(self):
         """对话"""
         thread_id = str(uuid.uuid4())
-        dialogue_messages = {}
         while True:
             user_input = input("你：")
             if user_input == "exit":
@@ -107,7 +105,8 @@ class Athena:
             #     user_location="北京市亦庄经济开发区",
             # )
             context = DialogueContext(
-                user_id="4444",
+                user_id="00006",
+                user_name="赵六",
                 user_type=UserType.STRANGER,
                 user_gender=UserGender.MALE,
             )
@@ -124,17 +123,10 @@ class Athena:
                     if chunk and hasattr(chunk, "content"):
                         print(f"\033[34m{chunk.content}\033[0m", end="", flush=True)
             print()
-            # 存储对话消息
-            dialogue_messages[context.user_id] = self.agent.get_state(config).values.get(
-                "messages", []
-            )
             # 检查退出标志
             if context.should_exit:
                 logger.info("用户请求退出，结束对话")
                 break
-        logger.info("对话结束，保存记忆")
-        for user_id, messages in dialogue_messages.items():
-            await save_memory(messages, user_id)
 
             # 流程流
             # on_chain_start

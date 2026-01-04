@@ -38,6 +38,8 @@ class LangchainGenericClient(LLMClient):
             client: Langchain 的 BaseChatModel 实例 ！！模型需要支持json format
         """
         self.client = client
+        self.max_tokens = 32768
+        self.cache_enabled=False
 
     def _convert_messages(self, messages: list[Message]) -> list[BaseMessage]:
         """将 graphiti 的 Message 列表转换为 langchain 的 BaseMessage 列表"""

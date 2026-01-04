@@ -15,8 +15,8 @@ base_url = os.getenv("LLM_QWEN_BASE_URL")
 def init_model(
     model: str = "qwen-flash",
     enable_thinking: bool = False,
-    model_kwargs: dict[str, Any] = {},
-    extra_body: dict[str, Any] = {},
+    model_kwargs: dict[str, Any] = {},  # noqa: B006
+    extra_body: dict[str, Any] = {},  # noqa: B006
     **kwargs: Any,
 ) -> BaseChatModel:
     match model:

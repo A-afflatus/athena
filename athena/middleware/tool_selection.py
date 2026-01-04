@@ -24,7 +24,7 @@ from config.logger import get_logger
 logger = get_logger(__name__)
 
 _tools_group = {
-    IntentionType.WEATHER: ["maps_weather"],
+    IntentionType.WEATHER: ["maps_weather", "save_user_info"],
 }
 
 
