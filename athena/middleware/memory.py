@@ -9,7 +9,7 @@ from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 
 from athena.context import AthenaState, DialogueContext
-from config.logger import get_logger
+from bootstrap.logger import get_logger
 from middleware.graphiti.graphiti import get_graphiti
 from model.models import init_model
 

@@ -9,8 +9,8 @@
     >>> logger.info("Hello!")
 """
 
-from config.logger import get_logger, setup_logger
-from config.bootstrap import AppContext, bootstrap
+from bootstrap.logger import get_logger, setup_logger
+from bootstrap.bootstrap import AppContext, bootstrap
 
 __all__ = [
     "setup_logger",

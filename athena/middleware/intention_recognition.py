@@ -15,7 +15,7 @@ from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 
 from athena.context import AthenaState, DialogueContext, IntentionType
-from config.logger import get_logger
+from bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
 

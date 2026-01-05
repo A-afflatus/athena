@@ -23,7 +23,7 @@ from athena.middleware.memory import UserMemoryMiddleware
 from athena.middleware.tool_selection import ToolSelectionMiddleware
 from athena.tools.base import BaseToolEntity
 from athena.tools.tools import init_tools
-from config.logger import get_logger
+from bootstrap.logger import get_logger
 from model.models import init_model
 
 logger = get_logger(__name__)

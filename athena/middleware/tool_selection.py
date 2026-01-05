@@ -19,7 +19,7 @@ from langchain_core.tools import BaseTool
 
 from athena.context import AthenaState, DialogueContext, IntentionType
 from athena.tools.base import BaseToolEntity
-from config.logger import get_logger
+from bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
 

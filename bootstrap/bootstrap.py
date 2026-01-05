@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 
-from config.logger import get_logger, setup_logger
+from bootstrap.logger import get_logger, setup_logger
 from middleware.graphiti.graphiti import setup_graphiti
 
 if TYPE_CHECKING:
