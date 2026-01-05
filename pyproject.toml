@@ -28,7 +28,6 @@ dependencies = [
     "graphiti-core>=0.25.0",
     "volcengine-python-sdk[ark]>=5.0.1",
     "dashscope>=1.25.5",
-    "mem0ai>=1.0.1",
 ]
 
 [project.optional-dependencies]

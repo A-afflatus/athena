@@ -11,7 +11,6 @@ from pydantic import BaseModel, Field
 from athena.context import AthenaState, DialogueContext
 from config.logger import get_logger
 from middleware.graphiti.graphiti import get_graphiti
-from middleware.mem0.mem0 import get_mem0
 from model.models import init_model
 
 logger = get_logger(__name__)
@@ -29,7 +28,6 @@ class MemoryFactsResponse(BaseModel):
 class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
     def __init__(self):
         # 对话记忆
-        self.memory = get_mem0()
         # todo 这个应该是另一个中间件图知识库
         self.graphiti = get_graphiti()
 
@@ -45,25 +43,30 @@ class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         user_query = cast(str, messages[-1].content)
 
         user_id = runtime.context.user_id
-        filters = {"OR": [{"user_id": user_id}]}
 
-        # 检索相关事实
-        relevant_memories = self.memory.search(user_query, top_k=10, filters=filters)  # type: ignore
-        # 将记忆格式化后存入 context，后续可以通过 dynamic_prompt 注入到系统提示词
-        if relevant_memories:
-            facts = [
-                f"时间:{m['created_at']}-内容:{m['memory']}" for m in relevant_memories["results"]
+        graphiti_results = await self.graphiti.search(user_query, group_ids=[user_id])
+
+        # 格式化 Graphiti 记忆
+        graphiti_facts = []
+        for result in graphiti_results:
+            fact_str = f"图谱事实: {result.fact}"
+            if hasattr(result, "valid_at") and result.valid_at:
+                fact_str += f" (生效: {result.valid_at})"
+            if hasattr(result, "invalid_at") and result.invalid_at:
+                fact_str += f" (失效: {result.invalid_at})"
+            graphiti_facts.append(fact_str)
+
+        # 将图谱记忆存入 context，后续可以通过 dynamic_prompt 注入到系统提示词
+        if graphiti_facts:
+            runtime.context.long_term_memory = graphiti_facts
+        else:
+            runtime.context.long_term_memory = [
+                f"时间:{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}-内容:开始本次对话"
             ]
-            # 保证一次多轮会话只检索一次长期记忆
-            runtime.context.long_term_memory = (
-                [f"时间:{m['created_at']}-内容:{m['memory']}" for m in relevant_memories["results"]]
-                if len(facts) > 0
-                else [f"时间:{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}-内容:开始本次对话"]
-            )
-            return {
-                "context": runtime.context,
-            }
-        return None
+
+        return {
+            "context": runtime.context,
+        }
 
     @override
     async def aafter_agent(
@@ -73,9 +76,15 @@ class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         # 获取最后一组人机对话
         messages = state.get("messages", [])
         # 过滤出 AIMessage 和 HumanMessage
-        messages = [m for m in messages if isinstance(m, (AIMessage, HumanMessage)) and m.content != ""]
+        messages = [
+            m
+            for m in messages
+            if isinstance(m, (AIMessage, HumanMessage)) and m.content != ""
+        ]
 
-        await save_memory(messages[-2:], runtime.context)
+        await save_memory(
+            cast(list[AnyMessage], messages[-2:]), runtime.context
+        )  # pyright: ignore[reportArgumentType]
         return None
 
 
@@ -107,34 +116,28 @@ memory_organization_agent = create_agent(
 async def save_memory(messages: list[AnyMessage], context: DialogueContext) -> None:
     if not messages or len(messages) == 0:
         return
-    # 摘要条目记忆-mem0
-    await _add_memory_async(messages, context.user_id)
     # 图谱记忆-graphiti
     await _add_graphiti_memory_async(messages, context)
 
 
-async def _add_memory_async(messages: list[AnyMessage], user_id: str) -> None:
-    """添加记忆到mem0"""
-    mem0 = get_mem0()
-    try:
-        filtered_messages = []
-        for msg in messages:
-            if isinstance(msg, HumanMessage):
-                filtered_messages.append({"role": "user", "content": msg.content})
-            elif isinstance(msg, AIMessage) and msg.content != "":
-                filtered_messages.append({"role": "assistant", "content": msg.content})
-        mem0.add(filtered_messages, user_id=user_id)
-    except Exception as e:
-        logger.error(f"添加记忆到mem0失败: {e}", exc_info=True)
-
-
-async def _add_graphiti_memory_async(messages: list[AnyMessage], context: DialogueContext) -> None:
+async def _add_graphiti_memory_async(
+    messages: list[AnyMessage], context: DialogueContext
+) -> None:
     """添加图谱记忆到graphiti"""
     try:
         graphiti = get_graphiti()
 
         # 通过agent 简化 分析关系以及行为
-        messages_str = "\n".join([f"用户: {msg.content}" if isinstance(msg, HumanMessage) else f"AI: {msg.content}" for msg in messages])
+        messages_str = "\n".join(
+            [
+                (
+                    f"用户: {msg.content}"
+                    if isinstance(msg, HumanMessage)
+                    else f"AI: {msg.content}"
+                )
+                for msg in messages
+            ]
+        )
 
         response = memory_organization_agent.invoke(
             {
@@ -145,7 +148,7 @@ async def _add_graphiti_memory_async(messages: list[AnyMessage], context: Dialog
                 ]
             }
         )
-        memory_response = cast(MemoryFactsResponse, response['structured_response'])
+        memory_response = cast(MemoryFactsResponse, response["structured_response"])
         user_facts = memory_response.facts
 
         if not user_facts or len(user_facts) == 0:
@@ -154,7 +157,6 @@ async def _add_graphiti_memory_async(messages: list[AnyMessage], context: Dialog
 
         # 生成episode名称，使用时间戳和用户ID
         episode_name = f"对话记录_{context.user_id}_{context.user_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
 
         # 添加episode到graphiti
         # 使用 user_id 作为 group_id 来分区不同用户的图谱

@@ -27,6 +27,7 @@ _tools_group = {
     IntentionType.WEATHER: ["maps_weather", "save_user_info"],
 }
 
+# todo 这个工具选择器感觉可以做一层加工，类似于skills那样的模式，先解析提示词，然后做意图归纳，最后生成对应提示词
 
 class ToolSelectionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
     """根据意图动态选择工具的中间件"""

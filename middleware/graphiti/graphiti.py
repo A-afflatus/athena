@@ -68,7 +68,6 @@ class GraphitiConfig:
             llm_client=LangchainGenericClient(init_model("qwen-flash")),
             embedder=LangchainEmbedder(init_embedding_model("doubao-embedding-vision-250615")),
             cross_encoder=LangchainReranker(cast(BaseChatOpenAI, init_model("qwen-flash"))),
-            # todo trace 集成
         )
 
         GraphitiConfig._configured = True
