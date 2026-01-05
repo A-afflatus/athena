@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from athena.context import AthenaState, DialogueContext
 from bootstrap.logger import get_logger
-from middleware.graphiti.graphiti import get_graphiti
+from middleware.graphiti import get_graphiti
 from model.models import init_model
 
 logger = get_logger(__name__)
