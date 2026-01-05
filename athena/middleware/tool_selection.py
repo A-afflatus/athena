@@ -37,11 +37,30 @@ class ToolSelectionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         # 构建工具名称到工具的映射
         self.tool_map = {tool.name: tool for tool in all_tools}
 
+    @override
+    async def awrap_model_call(
+        self,
+        request: ModelRequest,
+        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
+    ) -> ModelCallResult:
+        # 从上下文中获取用户意图列表
+        runtime = request.runtime
+        context = cast(DialogueContext, runtime.context)
+        intentions = context.user_intention
+
+        # 根据意图列表选择工具（合并所有意图需要的工具）
+        selected_tools = self._get_tools_for_intention(intentions)
+
+        # override工具列表
+        request = request.override(tools=selected_tools)  # type: ignore
+        # 调用处理器执行模型请求
+        return await handler(request)
+
     def _get_tools_for_intention(
         self, intentions: list[IntentionType] | None
     ) -> list[BaseTool]:
         if not intentions or len(intentions) == 0:
-            # 如果没有识别到意图，返回所有工具
+            # 如果没有识别到意图，返回所有工
             return [tool.get_tool() for tool in self.all_tools]
 
         # 将字符串意图转换为枚举类型
@@ -89,21 +108,4 @@ class ToolSelectionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         # 如果没有任何工具被选中，返回所有工具作为默认
         return [tool.get_tool() for tool in selected_tools]
 
-    @override
-    async def awrap_model_call(
-        self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
-        # 从上下文中获取用户意图列表
-        runtime = request.runtime
-        context = cast(DialogueContext, runtime.context)
-        intentions = context.user_intention
 
-        # 根据意图列表选择工具（合并所有意图需要的工具）
-        selected_tools = self._get_tools_for_intention(intentions)
-
-        # override工具列表
-        request = request.override(tools=selected_tools)  # type: ignore
-        # 调用处理器执行模型请求
-        return await handler(request)
