@@ -1,4 +1,5 @@
 from enum import Enum
+from re import I
 from langchain_core.tools import BaseTool
 
 from athena.context import IntentionType
@@ -7,9 +8,8 @@ from athena.context import IntentionType
 class ToolType(Enum):
     """工具类型"""
 
-    USER = "user"  # 按用户限定的工具
-    SYSTEM = "system"  # 系统工具,只有任务Agent能触发的工具
-    GENERAL = "general"  # 通用工具
+    SYSTEM = "SYSTEM"  # 系统工具,只有任务Agent能触发的工具
+    GENERAL = "GENERAL"  # 通用工具
 
 
 class BaseToolEntity:
@@ -19,55 +19,29 @@ class BaseToolEntity:
     intentions: list[IntentionType]
     tool: BaseTool
     name: str
+    description: str
 
     def __init__(
         self,
         tool: BaseTool,
-        type: ToolType,
-        intentions: list[IntentionType] = [],
+        type: ToolType = ToolType.GENERAL,
+        intentions: list[IntentionType] = [], # 工具支持的意图列表，当为空时，表示支持所有意图
+        description: str | None = None,
     ):
+        # 覆盖工具的描述
+        if description:
+            tool.description = description
         self.tool = tool
         self.type = type
         self.intentions = intentions
         self.name = tool.name
+        self.description = tool.description
 
     def is_available(self, intentions: list[IntentionType]) -> bool:
-        return any(intention in self.intentions for intention in intentions)
+        return len(self.intentions) == 0 or any(intention in self.intentions for intention in intentions)
 
     def get_tool(self) -> BaseTool:
         return self.tool
-
-
-class UserTool(BaseToolEntity):
-    """按用户限定的工具"""
-
-    user_ids: list[str]
-
-    def __init__(
-        self,
-        tool: BaseTool,
-        intentions: list[IntentionType] = [],
-        user_ids: list[str] = [],
-    ):
-        super().__init__(tool=tool, type=ToolType.USER, intentions=intentions)
-        self.user_ids = user_ids
-
-    def is_user_available(self, user_id: str) -> bool:
-        return any(user_id == uid for uid in self.user_ids)
-
-
-class SystemTool(BaseToolEntity):
-    """只有任务Agent能触发的工具"""
-
-    def __init__(self, tool: BaseTool):
-        super().__init__(tool=tool, type=ToolType.SYSTEM)
-
-
-class GeneralTool(BaseToolEntity):
-    """通用工具"""
-
-    def __init__(self, tool: BaseTool, intentions: list[IntentionType] = []):
-        super().__init__(tool=tool, type=ToolType.GENERAL, intentions=intentions)
 
 
 class Tools:
@@ -83,3 +57,17 @@ class Tools:
 
     def add_wrap_tool(self) -> list[BaseToolEntity]:
         return self.tools
+
+    def query_tools(
+        self,
+        name: str | None = None,
+        type: ToolType | None = None,
+        intentions: list[IntentionType] = [],
+    ) -> list[BaseToolEntity]:
+        return [
+            tool
+            for tool in self.tools
+            if (name is None or tool.name == name)
+            and (type is None or tool.type == type)
+            and tool.is_available(intentions)
+        ]

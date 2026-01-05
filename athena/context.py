@@ -23,10 +23,10 @@ class UserGender(Enum):
 class IntentionType(Enum):
     """用户意图类型"""
 
-    EXIT = "EXIT"
-    WEATHER = "WEATHER"
-    SEARCH = "SEARCH"
-    GENERAL = "GENERAL"
+    EXIT = "退出"
+    WEATHER = "天气"
+    SEARCH = "搜索"
+    GENERAL = "通用" # 兜底意图，当没有其他意图时，使用此意图
 
 
 class DialogueContext(BaseModel):

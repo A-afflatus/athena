@@ -91,16 +91,25 @@ class IntentionRecognitionMiddleware(AgentMiddleware[AthenaState, DialogueContex
             elif isinstance(msg, AIMessage):
                 dialogue_parts.append(f"ai:{cast(str, msg.content)}")
 
-        req_mes = f"最近对话:{','.join(dialogue_parts)}\n当前用户消息:{user_message.content}"
+        req_mes = (
+            f"最近对话:{','.join(dialogue_parts)}\n当前用户消息:{user_message.content}"
+        )
         # 识别意图
         response = self.agent.invoke({"messages": [HumanMessage(content=req_mes)]})
         # 识别结果
         intention_response = cast(IntentionResponse, response["structured_response"])
-        intentions = intention_response.user_intentions
+        intentions = (
+            intention_response.user_intentions
+            if intention_response.user_intentions
+            and len(intention_response.user_intentions) > 0
+            else [IntentionType.GENERAL]
+        )
         logger.info(f"识别到意图: {[intention.value for intention in intentions]}")
         # 更新上下文
         runtime.context.user_intention = intentions
-        runtime.context.should_exit = IntentionType.EXIT in intentions  # 检查是否包含退出意图
+        runtime.context.should_exit = (
+            IntentionType.EXIT in intentions
+        )  # 检查是否包含退出意图
         return {
             "context": runtime.context,
         }

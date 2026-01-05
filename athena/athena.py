@@ -21,7 +21,7 @@ from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
 from athena.middleware.memory import UserMemoryMiddleware
 from athena.middleware.tool_selection import ToolSelectionMiddleware
-from athena.tools.base import BaseToolEntity
+from athena.tools.base import Tools
 from athena.tools import init_tools
 from bootstrap.logger import get_logger
 from model.models import init_model
@@ -48,12 +48,13 @@ class Athena:
             model="qwen-flash", enable_thinking=True, temperature=0.1
         )
 
-    async def init_middleware(self, tools: list[BaseToolEntity]):
+    async def init_middleware(self, tools: Tools):
         """初始化中间件"""
+
         # 意图识别中间件
         intention_middleware = IntentionRecognitionMiddleware(llm=self.intention_llm)
         # 工具选择中间件（根据意图动态调整工具）
-        tool_selection_middleware = ToolSelectionMiddleware(all_tools=tools)
+        tool_selection_middleware = ToolSelectionMiddleware(tools)
         # 用户记忆中间件
         user_memory_middleware = UserMemoryMiddleware()
 
@@ -76,7 +77,7 @@ class Athena:
         # 属性存储 命名空间+键值对的方式
         self.store = InMemoryStore()
         # 中间件
-        middleware = await self.init_middleware(tools.add_wrap_tool())
+        middleware = await self.init_middleware(tools)
 
         self.agent = create_agent(
             model=self.admin_llm,
