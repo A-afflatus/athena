@@ -18,12 +18,10 @@ from langgraph.store.memory import InMemoryStore
 
 from athena.context import (
     AthenaState,
-    ChatEvent,
     ChatEventListener,
     ChatRequest,
     DialogueContext,
-    UserGender,
-    UserType,
+    of_chat_event,
 )
 from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
@@ -105,41 +103,34 @@ class Athena:
         await listener.on_chat_start()
         async for event in self.agent.astream_events(
             {"messages": [HumanMessage(content=user_input)]},
-            config={"configurable": {"thread_id": context.user_id + "-" + thread_id}},
+            config={"configurable": {"thread_id": context.user_id + "-" + thread_id},"tags":["athena_chat"]},
             context=context,
             version="v2",
         ):
-            # logger.warning(f"event: {event}")
-            if event.get("event") == "on_chat_model_stream":
-                chunk = event.get("data", {}).get("chunk")
-                if chunk and hasattr(chunk, "content"):
-                    await listener.on_chat_model_stream(
-                        ChatEvent(thread_id=thread_id, chunk=chunk.content)
-                    )
+            logger.warning(f"event: {event}") # todo 调试事件
+            await listener.on_chat_event_stream(of_chat_event(event))
         await listener.on_chat_end()
         # 检查退出标志
         if context.should_exit:
             logger.info("用户请求退出，结束对话")
             await listener.on_exit()
 
-            # 流程流
-            # on_chain_start
-            # on_chain_stream
-            # on_chain_end
-            # 工具流
-            # on_tool_start
-            # on_tool_end
-            # agent流
-            # on_chat_model_start
-            # on_chat_model_stream
-            # on_chat_model_end
-
-            # 还有个思考呢？
-
-            # 模型流
-            # on_llm_start
-            # on_llm_stream
-            # on_llm_end
-            # 检索流
-            # on_retriever_start
-            # on_retriever_end
+###
+# | event                  | 含义                | 特点
+# | ---------------------- | ------------------- | -------------------------------------------------------------------------------------
+# | `on_chat_model_start`  | Chat Model 开始运行   | 输入包含 messages，metadata 包含模型配置 (如 temperature, model_name)
+# | `on_chat_model_stream` | Chat Model 流式输出   | 包含 AIMessageChunk，可能是文本内容 (content) 或工具调用片段 (tool_call_chunks)
+# | `on_chat_model_end`    | Chat Model 运行结束   | 输出完整的 AIMessage
+# | `on_llm_start`         | 非聊天模型 开始运行    | 
+# | `on_llm_stream`        | 非聊天模型 流式输出    | 
+# | `on_llm_end`           | 非聊天模型 运行结束    | 
+# | `on_chain_start`       | Chain 开始运行        | 输入是字典或对象，name 字段标识 Chain 名称 (如 UserMemoryMiddleware, LangGraph)
+# | `on_chain_stream`      | Chain 流式输出        | 包含状态更新或中间结果 chunk
+# | `on_chain_end`         | Chain 运行结束        | 输出最终执行结果
+# | `on_tool_start`        | Tool 开始运行         | 输入是工具参数，name 字段标识工具名称 (如 maps_weather)
+# | `on_tool_end`          | Tool 运行结束         | 输出工具执行结果
+# | `on_retriever_start`   | Retriever 召回开始    | 
+# | `on_retriever_end`     | Retriever 召回结束    | 
+# | `on_prompt_start`      | ChatPromptTemplate 开始处理       | 
+# | `on_prompt_end`        | ChatPromptTemplate 处理结束       | 
+###
