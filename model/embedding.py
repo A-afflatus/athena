@@ -16,16 +16,16 @@ volcengine_api_key = os.getenv("VOLC_ENGINE_API_KEY")
 def init_embedding_model(
     model: str = "qwen2.5-vl-embedding",
 ) -> Embeddings:
-    match model:
-        case "qwen2.5-vl-embedding":
-            return DashScopeMultiModalEmbeddings(
-                model=model,
-                api_key=SecretStr(qwen_api_key), # type: ignore
-            )
-        case "doubao-embedding-vision-250615":
-            return VolcEngineMultimodalEmbedding(
-                model=model,
-                api_key=volcengine_api_key, # type: ignore
-            )
-        case _:
-            raise ValueError(f"Invalid model: {model}")
+    model_lower = model.lower()
+    if model_lower.startswith("qwen"):
+        return DashScopeMultiModalEmbeddings(
+            model=model,
+            api_key=SecretStr(qwen_api_key), # type: ignore
+        )
+    elif model_lower.startswith("doubao"):
+        return VolcEngineMultimodalEmbedding(
+            model=model,
+            api_key=volcengine_api_key, # type: ignore
+        )
+    else:
+        raise ValueError(f"Invalid model: {model}")
