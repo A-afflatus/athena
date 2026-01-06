@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Awaitable, Callable
 
 from langchain.agents import AgentState
 from pydantic import BaseModel, Field
@@ -50,3 +51,26 @@ class DialogueContext(BaseModel):
 
 class AthenaState(AgentState):
     """代理状态"""
+
+
+class ChatRequest(BaseModel):
+    """聊天请求"""
+
+    thread_id: str = Field(description="会话ID")
+    user_input: str = Field(description="用户输入")
+    context: DialogueContext = Field(description="对话上下文")
+
+class ChatEvent(BaseModel):
+    """聊天事件"""
+
+    thread_id: str = Field(description="会话ID")
+    chunk: str = Field(description="流式响应的片段")
+
+
+class ChatEventListener(BaseModel):
+    """聊天事件监听器"""
+
+    on_chat_start: Callable[[], Awaitable[None]] = Field(description="单轮对话开始事件")
+    on_chat_end: Callable[[], Awaitable[None]] = Field(description="单轮对话结束事件")
+    on_chat_model_stream: Callable[[ChatEvent], Awaitable[None]] = Field(description="聊天模型流式响应")
+    on_exit: Callable[[], Awaitable[None]] = Field(description="退出事件")

@@ -16,7 +16,15 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
-from athena.context import AthenaState, DialogueContext, UserGender, UserType
+from athena.context import (
+    AthenaState,
+    ChatEvent,
+    ChatEventListener,
+    ChatRequest,
+    DialogueContext,
+    UserGender,
+    UserType,
+)
 from athena.middleware.dichotomy_prompts import dynamic_system_prompt
 from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
 from athena.middleware.memory import UserMemoryMiddleware
@@ -89,45 +97,30 @@ class Athena:
             middleware=middleware,
         )
 
-    async def dialogue(self):
+    async def chat(self, chat: ChatRequest, listener: ChatEventListener):
         """对话"""
-        thread_id = str(uuid.uuid4())
-        while True:
-            user_input = input("你：")
-            if user_input == "exit":
-                break
-            if not user_input.strip():
-                continue
-            # context = DialogueContext(
-            #     user_id="root",
-            #     user_type=UserType.OWNER,
-            #     user_name="汪京",
-            #     user_gender=UserGender.MALE,
-            #     user_location="北京市亦庄经济开发区",
-            # )
-            context = DialogueContext(
-                user_id="00006",
-                user_name="赵六",
-                user_type=UserType.STRANGER,
-                user_gender=UserGender.MALE,
-            )
-            config = {"configurable": {"thread_id": context.user_id + "-" + thread_id}}
-            async for event in self.agent.astream_events(
-                {"messages": [HumanMessage(content=user_input)]},
-                config=config,  # type: ignore
-                context=context,
-                version="v2",
-            ):
-                # logger.warning(f"event: {event}")
-                if event.get("event") == "on_chat_model_stream":
-                    chunk = event.get("data", {}).get("chunk")
-                    if chunk and hasattr(chunk, "content"):
-                        print(f"\033[34m{chunk.content}\033[0m", end="", flush=True)
-            print()
-            # 检查退出标志
-            if context.should_exit:
-                logger.info("用户请求退出，结束对话")
-                break
+        thread_id = chat.thread_id
+        user_input = chat.user_input
+        context = chat.context
+        await listener.on_chat_start()
+        async for event in self.agent.astream_events(
+            {"messages": [HumanMessage(content=user_input)]},
+            config={"configurable": {"thread_id": context.user_id + "-" + thread_id}},
+            context=context,
+            version="v2",
+        ):
+            # logger.warning(f"event: {event}")
+            if event.get("event") == "on_chat_model_stream":
+                chunk = event.get("data", {}).get("chunk")
+                if chunk and hasattr(chunk, "content"):
+                    await listener.on_chat_model_stream(
+                        ChatEvent(thread_id=thread_id, chunk=chunk.content)
+                    )
+        await listener.on_chat_end()
+        # 检查退出标志
+        if context.should_exit:
+            logger.info("用户请求退出，结束对话")
+            await listener.on_exit()
 
             # 流程流
             # on_chain_start

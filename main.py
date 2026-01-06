@@ -16,13 +16,16 @@ import signal
 import sys
 from typing import TYPE_CHECKING
 
-from athena import Athena
+import uvicorn
 from bootstrap.bootstrap import bootstrap
 from bootstrap.logger import get_logger
 from middleware.graphiti import close_graphiti
+from web import app
 
 if TYPE_CHECKING:
     from bootstrap.bootstrap import AppContext
+
+logger = get_logger(__name__)
 
 
 class Application:
@@ -39,6 +42,13 @@ class Application:
         self.ctx: AppContext | None = None
         self._logger: logging.Logger | None = None
         self._shutdown_event: asyncio.Event | None = None
+        # web服务
+        self._uvicorn_server: uvicorn.Server | None = None
+        self._server_task: asyncio.Task | None = None
+
+    def start(self) -> None:
+        """同步启动入口，内部调用异步方法"""
+        asyncio.run(self._start())
 
     async def _run(self) -> None:
         # _logger 在此方法调用前已初始化
@@ -46,18 +56,21 @@ class Application:
         assert self._shutdown_event is not None
 
         profile = self.ctx.profile if self.ctx else "unknown"
-        self._logger.info(f"当前运行环境: {profile}")
-        # 启动Athena
-        athena = Athena()
-        # 初始化athena
-        await athena.init()
-        self._logger.info("Athena 已启动！")
-        # 循环等待控制台输入用户消息，并调用 athena.dialogue，直到收到退出信号
-        await athena.dialogue()
+        logger.info(f"当前运行环境: {profile}")
+        # 启动 FastAPI WebSocket 服务
+        await self._start_web_server()
 
-        self._shutdown_event.set()  # todo 测试用，后续删除
-        # 等待关闭事件
-        await self._shutdown_event.wait()
+    async def _start_web_server(self) -> None:
+        """启动 FastAPI WebSocket 服务"""
+        config = uvicorn.Config(
+            app=app,
+            host="0.0.0.0",
+            port=8080,
+            log_config=None,  # 使用我们自己的日志系统
+        )
+        self._uvicorn_server = uvicorn.Server(config)
+        # 在后台任务中启动 uvicorn 服务器
+        self._server_task = asyncio.create_task(self._uvicorn_server.serve())
 
     async def _start(self) -> None:
         """异步启动方法"""
@@ -75,6 +88,8 @@ class Application:
                 loop.add_signal_handler(sig, self._handle_signal, sig)
 
             await self._run()
+            # 等待关闭事件
+            await self._shutdown_event.wait()
 
         except KeyboardInterrupt:
             if self._logger is not None:
@@ -88,9 +103,22 @@ class Application:
         finally:
             await self._shutdown()
 
-    def start(self) -> None:
-        """同步启动入口，内部调用异步方法"""
-        asyncio.run(self._start())
+    async def _shutdown(self) -> None:
+        """异步关闭方法"""
+        if self._logger is not None:
+            self._logger.info("应用正在关闭...")
+
+        # 关闭 Graphiti
+        logger.info("正在关闭 Graphiti...")
+        await close_graphiti()
+        logger.info("Graphiti 已关闭")
+        # 停止 uvicorn 服务器
+        logger.info("正在关闭 FastAPI WebSocket 服务...")
+        if self._uvicorn_server:
+            self._uvicorn_server.should_exit = True
+            await self._server_task if self._server_task else None
+        logger.info("FastAPI WebSocket 服务已关闭")
+        logger.info("应用已安全退出")
 
     def _handle_signal(self, signum: int) -> None:
         """处理信号"""
@@ -100,13 +128,6 @@ class Application:
         # 直接设置事件（因为已经在事件循环的线程中了）
         if self._shutdown_event is not None:
             self._shutdown_event.set()
-
-    async def _shutdown(self) -> None:
-        """异步关闭方法"""
-        if self._logger is not None:
-            self._logger.info("应用正在关闭...")
-            await close_graphiti()
-            self._logger.info("应用已安全退出")
 
 
 def main() -> int:

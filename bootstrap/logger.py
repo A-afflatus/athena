@@ -210,6 +210,14 @@ class LoggerConfig:
         
         # 阻止日志向上传播到根日志器
         root_logger.propagate = False
+        
+        # 设置 graphiti_core 相关日志级别为 ERROR（减少索引相关的 INFO 日志）
+        graphiti_logger = logging.getLogger("graphiti_core")
+        graphiti_logger.setLevel(logging.ERROR)
+        
+        # 设置 Neo4j 驱动日志级别为 ERROR（减少数据库相关的 INFO 日志）
+        neo4j_logger = logging.getLogger("neo4j")
+        neo4j_logger.setLevel(logging.ERROR)
 
 
 # 全局日志配置实例
