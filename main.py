@@ -111,7 +111,6 @@ class Application:
         # 关闭 Graphiti
         logger.info("正在关闭 Graphiti...")
         await close_graphiti()
-        logger.info("Graphiti 已关闭")
         # 停止 uvicorn 服务器
         logger.info("正在关闭 FastAPI WebSocket 服务...")
         if self._uvicorn_server:

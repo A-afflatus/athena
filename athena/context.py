@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Awaitable, Callable
+from typing import Any, Awaitable, Callable, Literal, cast
 
 from langchain.agents import AgentState
 from langchain_core.runnables.schema import StreamEvent
@@ -65,16 +65,23 @@ class ChatRequest(BaseModel):
     context: DialogueContext = Field(description="对话上下文")
 
 
+class ChatEventData(BaseModel):
+    """聊天事件数据"""
+
+    chunk_type: Literal["text"] = Field(description="事件数据类型")
+    content: str = Field(description="事件数据")
+
+
 class ChatEvent(BaseModel):
     """聊天事件"""
 
     event: str = Field(description="事件类型")
-    run_id: str = Field(description="运行事件ID")
     name: str = Field(description="事件名称")
     tags: list[str] = Field(description="标签列表")
-    metadata: dict[str, Any] = Field(description="元数据")
+    run_id: str = Field(description="运行事件ID")
     parent_ids: list[str] = Field(description="父事件ID列表")
-    data: Any = Field(description="事件数据", default={})
+    data: ChatEventData | None = Field(description="事件数据", default=None)
+    metadata: dict[str, Any] = Field(description="元数据")
 
 
 def of_chat_event(event: StreamEvent) -> ChatEvent | None:
@@ -82,31 +89,37 @@ def of_chat_event(event: StreamEvent) -> ChatEvent | None:
     parent_ids = list(event.get("parent_ids", []))
     chat_event = ChatEvent(
         event=event_type,
-        run_id=event.get("run_id", ""),
         name=event.get("name", ""),
         tags=event.get("tags", []),
-        metadata=event.get("metadata", {}),
+        run_id=event.get("run_id", ""),
         parent_ids=parent_ids,
+        data=None,
+        # metadata=event.get("metadata", {}),
+        metadata={},
     )
     match (event_type):
-        case "on_custom_event":
-            chat_event.data = event.get("data", {})
-        case "on_chat_model_start":
-            chat_event.data = event.get("data", {})
         case "on_chat_model_stream":
-            chat_event.data = event.get("data", {})
-        case "on_chat_model_end":
-            chat_event.data = event.get("data", {})
-        case "on_chain_start":
-            chat_event.data = event.get("data", {})
-        case "on_chain_stream":
-            chat_event.data = event.get("data", {})
-        case "on_chain_end":
-            chat_event.data = event.get("data", {})
-        case "on_tool_start":
-            chat_event.data = event.get("data", {})
+            chunk = event.get("data", {}).get("chunk", None)
+            if chunk is None or getattr(chunk, "content", "") == "":
+                return None
+            else:
+                chat_event.data = ChatEventData(
+                    chunk_type="text", content=getattr(chunk, "content", "")
+                )
+        case "on_custom_event":
+            chat_event.data = cast(ChatEventData, event.get("data"))
         case (
-            "on_llm_start"
+            "on_chain_start"
+            | "on_chain_end"
+            | "on_chat_model_start"
+            | "on_chat_model_end"
+            | "on_tool_start"
+            | "on_tool_end"
+        ):
+            pass
+        case (
+            "on_chain_stream"
+            | "on_llm_start"
             | "on_llm_stream"
             | "on_llm_end"
             | "on_retriever_start"

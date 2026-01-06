@@ -13,8 +13,9 @@ from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.messages import AIMessage, HumanMessage
 from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
+from langchain_core.callbacks.manager import adispatch_custom_event
 
-from athena.context import AthenaState, DialogueContext, IntentionType
+from athena.context import AthenaState, ChatEventData, DialogueContext, IntentionType
 from bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
@@ -60,7 +61,7 @@ class IntentionRecognitionMiddleware(AgentMiddleware[AthenaState, DialogueContex
         )
 
     @override
-    def before_agent(
+    async def abefore_agent(
         self, state: AthenaState, runtime: Runtime[DialogueContext]
     ) -> dict[str, Any] | None:
         """意图识别"""
@@ -105,11 +106,15 @@ class IntentionRecognitionMiddleware(AgentMiddleware[AthenaState, DialogueContex
             else [IntentionType.GENERAL]
         )
         logger.info(f"识别到意图: {[intention.value for intention in intentions]}")
+        await adispatch_custom_event(
+            "intention_recognition",
+            ChatEventData(
+                chunk_type="text",
+                content=f"识别到意图: {[intention.value for intention in intentions]}",
+            ),
+        )
         # 更新上下文
         runtime.context.user_intention = intentions
         runtime.context.should_exit = (
             IntentionType.EXIT in intentions
         )  # 检查是否包含退出意图
-        return {
-            "context": runtime.context,
-        }

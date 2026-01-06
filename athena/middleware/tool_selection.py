@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import cast, override
 
+from langchain_core.callbacks.manager import adispatch_custom_event
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     ModelCallResult,
@@ -16,7 +17,7 @@ from langchain.agents.middleware.types import (
     ModelResponse,
 )
 
-from athena.context import AthenaState, DialogueContext, IntentionType
+from athena.context import AthenaState, ChatEventData, DialogueContext, IntentionType
 from athena.tools.base import ToolType, Tools
 from bootstrap.logger import get_logger
 
@@ -49,10 +50,14 @@ class ToolSelectionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
             type=ToolType.GENERAL, intentions=intentions
         )
 
-        logger.info(
-            f"意图: 【{', '.join([intention.value for intention in intentions])}】 选择工具: 【{', '.join([tool.name for tool in selected_tools])}】"
+        logger.info(f"选择工具: 【{[tool.name for tool in selected_tools]}】")
+        await adispatch_custom_event(
+            "tool_selection",
+            ChatEventData(
+                chunk_type="text",
+                content=f"选择工具: 【{[tool.name for tool in selected_tools]}】",
+            ),
         )
-
         # override工具列表
         request = request.override(tools=[tool.get_tool() for tool in selected_tools])
         # 调用处理器执行模型请求

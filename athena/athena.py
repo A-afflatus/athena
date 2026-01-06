@@ -103,11 +103,11 @@ class Athena:
         await listener.on_chat_start()
         async for event in self.agent.astream_events(
             {"messages": [HumanMessage(content=user_input)]},
-            config={"configurable": {"thread_id": context.user_id + "-" + thread_id},"tags":["athena_chat"]},
+            config={"configurable": {"thread_id": context.user_id + "-" + thread_id}},
             context=context,
             version="v2",
         ):
-            logger.warning(f"event: {event}") # todo 调试事件
+            # logger.warning(f"event: {event}") # 调试事件
             await listener.on_chat_event_stream(of_chat_event(event))
         await listener.on_chat_end()
         # 检查退出标志

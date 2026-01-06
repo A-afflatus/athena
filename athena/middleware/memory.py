@@ -7,8 +7,9 @@ from langchain.agents.middleware.types import AgentMiddleware
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage
 from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
+from langchain_core.callbacks.manager import adispatch_custom_event
 
-from athena.context import AthenaState, DialogueContext
+from athena.context import AthenaState, ChatEventData, DialogueContext
 from bootstrap.logger import get_logger
 from middleware.graphiti import get_graphiti
 from model.models import init_model
@@ -64,10 +65,6 @@ class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
                 f"时间:{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}-内容:开始本次对话"
             ]
 
-        return {
-            "context": runtime.context,
-        }
-
     @override
     async def aafter_agent(
         self, state: AthenaState, runtime: Runtime[DialogueContext]
@@ -83,7 +80,7 @@ class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         ]
 
         await save_memory(
-            cast(list[AnyMessage], messages[-2:]), runtime.context
+            cast(list[AnyMessage], messages[-2:]), runtime
         )  # pyright: ignore[reportArgumentType]
         return None
 
@@ -142,16 +139,17 @@ memory_organization_agent = create_agent(
 )
 
 
-async def save_memory(messages: list[AnyMessage], context: DialogueContext):
+async def save_memory(messages: list[AnyMessage], runtime: Runtime[DialogueContext]):
     if not messages or len(messages) == 0:
         return []
     # 图谱记忆-graphiti
-    await _add_graphiti_memory_async(messages, context)
+    await _add_graphiti_memory_async(messages, runtime)
 
 
 async def _add_graphiti_memory_async(
-    messages: list[AnyMessage], context: DialogueContext
+    messages: list[AnyMessage], runtime: Runtime[DialogueContext]
 ):
+    context = runtime.context
     """添加图谱记忆到graphiti"""
     try:
         graphiti = get_graphiti()
@@ -208,8 +206,14 @@ async def _add_graphiti_memory_async(
         user_facts = memory_response.facts
 
         if not user_facts or len(user_facts) == 0:
-            logger.info("没有提取出新的用户事实，跳过graphiti记忆保存")
             return
+        await adispatch_custom_event(
+            "save_memory",
+            ChatEventData(
+                chunk_type="text",
+                content=f"提取到新的用户事实: {user_facts}，开始保存图谱记忆...",
+            ),
+        )
 
         # 生成episode名称，使用时间戳和用户ID
         episode_name = f"对话记录_{context.user_id}_{context.user_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
