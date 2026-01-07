@@ -172,6 +172,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "uvicorn", extra = ["standard"] },
     { name = "volcengine-python-sdk", extra = ["ark"] },
+    { name = "websocket-client" },
     { name = "websockets" },
 ]
 
@@ -201,6 +202,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30.0" },
     { name = "volcengine-python-sdk", extras = ["ark"], specifier = ">=5.0.1" },
+    { name = "websocket-client", specifier = ">=1.9.0" },
     { name = "websockets", specifier = ">=15.0.1" },
 ]
 provides-extras = ["dev"]

@@ -6,5 +6,6 @@ from __future__ import annotations
 
 from web.web import app
 import web.robot  # pyright: ignore[reportUnusedImport]
+import web.asr  # pyright: ignore[reportUnusedImport]
 
 __all__ = ["app"]
