@@ -169,22 +169,15 @@ async def websocket_tts(websocket: WebSocket):
                 except Exception as e:
                     logger.error(f"接收消息时出错: {e}")
                     break
-
-        finally:
             # 完成TTS会话
-            try:
-                if tts_instance:
-                    tts_instance.finish()
-
-            except Exception as e:
-                logger.error(f"完成TTS会话时出错: {e}")
-
+            tts_instance.finish()
             # 等待所有消息处理完毕（session_finished 或 connection_closed）
             try:
                 await asyncio.wait_for(complete_event.wait(), timeout=10.0)
             except asyncio.TimeoutError:
                 logger.warning("等待TTS会话结束超时")
-
+        finally:
+            await asyncio.sleep(1)
             # 取消消息处理任务
             message_task.cancel()
             try:

@@ -274,7 +274,7 @@ async def websocket_asr(websocket: WebSocket):
                     {"type": "error", "message": f"处理消息失败: {e}"}
                 )
                 break
-
+        await asyncio.sleep(1)
         # 取消发送任务
         send_task.cancel()
         try:

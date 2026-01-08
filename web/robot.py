@@ -99,7 +99,7 @@ async def websocket_chat(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.info("WebSocket 连接已断开")
     except Exception as e:
-        logger.error(f"WebSocket 处理错误: {e}")
+        logger.error(f"WebSocket 处理错误: {e}", exc_info=True)
         try:
             await websocket.close()
         except:
