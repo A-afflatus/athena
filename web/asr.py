@@ -61,9 +61,6 @@ class ASRWebSocketClient:
                 },
             },
         }
-        logger.debug(
-            f"发送会话配置: {json.dumps(event_vad, indent=2, ensure_ascii=False)}"
-        )
         ws.send(json.dumps(event_vad))
         # 等待会话更新完成
         time.sleep(0.5)
@@ -100,13 +97,11 @@ class ASRWebSocketClient:
     def _on_close(
         self, ws: websocket.WebSocketApp, close_status_code: int, close_msg: str
     ) -> None:
-        """WebSocket 关闭回调"""
         logger.info(f"WebSocket 连接已关闭: {close_status_code}, {close_msg}")
         self.is_running = False
         self.on_close()
 
     def _send_audio_loop(self) -> None:
-        """音频发送循环（在线程中运行）"""
         time.sleep(0.5)  # 等待会话更新完成
         while self.is_running:
             try:
@@ -246,7 +241,6 @@ async def websocket_asr(websocket: WebSocket):
                     # 检查连接状态
                     if websocket.application_state == WebSocketState.DISCONNECTED:
                         break
-                    continue
 
         send_task = asyncio.create_task(send_transcripts())
 
@@ -260,7 +254,7 @@ async def websocket_asr(websocket: WebSocket):
                 break
 
             try:
-                # 接收音频数据（二进制或文本）
+                # 接收音频数据
                 event = await websocket.receive()
                 text = event.get("text")
                 if text:

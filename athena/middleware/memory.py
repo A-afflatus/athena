@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from typing import Any, cast, override
 
@@ -143,7 +144,7 @@ async def save_memory(messages: list[AnyMessage], runtime: Runtime[DialogueConte
     if not messages or len(messages) == 0:
         return []
     # 图谱记忆-graphiti
-    await _add_graphiti_memory_async(messages, runtime)
+    asyncio.create_task(_add_graphiti_memory_async(messages, runtime))
 
 
 async def _add_graphiti_memory_async(
