@@ -39,6 +39,7 @@ class DialogueContext(BaseModel):
     user_name: str | None = Field(description="用户名称", default=None)
     user_gender: UserGender | None = Field(description="用户性别", default=None)
     user_location: str | None = Field(description="用户当前位置", default=None)
+    user_emotion: str | None = Field(description="用户情绪", default=None)
 
     user_intention: list[IntentionType] | None = Field(
         description="用户意图类型列表，可能包含多个意图",

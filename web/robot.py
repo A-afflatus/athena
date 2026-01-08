@@ -5,6 +5,8 @@ FastAPI WebSocket 服务
 
 from __future__ import annotations
 
+import json
+from typing import cast
 import uuid
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -45,12 +47,7 @@ async def websocket_chat(websocket: WebSocket):
         #     user_gender=UserGender.MALE,
         #     user_location="北京市亦庄经济开发区",
         # )
-        context = DialogueContext(
-            user_id="00006",
-            user_name="赵六",
-            user_type=UserType.STRANGER,
-            user_gender=UserGender.MALE,
-        )
+
 
         async def on_chat_start():
             await websocket.send_json({"event":"on_dialogue_start"})
@@ -81,16 +78,23 @@ async def websocket_chat(websocket: WebSocket):
 
             # 接收消息
             user_input = await websocket.receive_text()
-            if user_input == "exit":
+            user_input = json.loads(user_input)
+            input_event = cast(str, user_input.get("event"))
+            if input_event == "exit":
                 break
-            if not user_input.strip():
-                continue
-            await athena.chat(
-                ChatRequest(
-                    thread_id=thread_id, user_input=user_input, context=context
-                ),
-                listener,
-            )
+            if input_event == "user_input":
+                text_input = cast(str, user_input.get("text_input", ""))
+                if not text_input or text_input.strip()=="":
+                    continue
+                emotion = cast(str, user_input.get("emotion", ""))
+                context = DialogueContext(
+                    user_id="00006",
+                    user_name="赵六",
+                    user_type=UserType.STRANGER,
+                    user_gender=UserGender.MALE,
+                    user_emotion=emotion,
+                )
+                await athena.chat(ChatRequest(thread_id=thread_id, user_input=text_input, context=context),listener)
 
     except WebSocketDisconnect:
         logger.info("WebSocket 连接已断开")

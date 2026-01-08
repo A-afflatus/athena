@@ -6,8 +6,6 @@ Athena 核心类
 
 from __future__ import annotations
 
-import uuid
-
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
     SummarizationMiddleware,

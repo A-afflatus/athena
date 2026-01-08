@@ -34,5 +34,6 @@ def _build_prompt(service_standard: str, context: DialogueContext,long_term_memo
         user_gender=context.user_gender.value if context.user_gender else "未知,用到时需提前向用户确认",
         user_location=context.user_location or "未知,用到时需提前向用户确认",
         service_standard=service_standard,
+        user_emotion=context.user_emotion or "",
         long_term_memory="\n".join(long_term_memory),
     )

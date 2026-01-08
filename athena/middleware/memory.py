@@ -51,7 +51,7 @@ class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         # 格式化 Graphiti 记忆
         graphiti_facts = []
         for result in graphiti_results:
-            fact_str = f"图谱事实: {result.fact}"
+            fact_str = result.fact
             if hasattr(result, "valid_at") and result.valid_at:
                 fact_str += f" (生效: {result.valid_at})"
             if hasattr(result, "invalid_at") and result.invalid_at:
