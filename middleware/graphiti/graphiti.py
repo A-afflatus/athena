@@ -65,9 +65,9 @@ class GraphitiConfig:
             uri=self.neo4j_uri,
             user=self.neo4j_user,
             password=self.neo4j_password,
-            llm_client=LangchainGenericClient(init_model("qwen-flash")),
-            embedder=LangchainEmbedder(init_embedding_model("doubao-embedding-vision-250615")),
-            cross_encoder=LangchainReranker(cast(BaseChatOpenAI, init_model("qwen-flash"))),
+            llm_client=LangchainGenericClient(init_model("qwen-flash-2025-07-28")),
+            embedder=LangchainEmbedder(init_embedding_model("qwen2.5-vl-embedding")),
+            cross_encoder=LangchainReranker(cast(BaseChatOpenAI, init_model("qwen-flash-2025-07-28"))),
         )
 
         GraphitiConfig._configured = True

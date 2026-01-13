@@ -1,9 +1,7 @@
 import os
-from typing import Any
 
 from dotenv import load_dotenv
 from langchain.embeddings.base import Embeddings
-from pydantic import SecretStr
 
 from model.adapter.qwen_embedding import DashScopeMultiModalEmbeddings
 from model.adapter.volcengine_embedding import VolcEngineMultimodalEmbedding
@@ -20,7 +18,7 @@ def init_embedding_model(
     if model_lower.startswith("qwen"):
         return DashScopeMultiModalEmbeddings(
             model=model,
-            api_key=SecretStr(qwen_api_key), # type: ignore
+            api_key=qwen_api_key, # type: ignore
         )
     elif model_lower.startswith("doubao"):
         return VolcEngineMultimodalEmbedding(

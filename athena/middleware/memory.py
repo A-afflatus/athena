@@ -30,7 +30,6 @@ class MemoryFactsResponse(BaseModel):
 class UserMemoryMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
     def __init__(self):
         # 对话记忆
-        # todo 这个应该是另一个中间件图知识库
         self.graphiti = get_graphiti()
 
     @override
@@ -133,7 +132,7 @@ system_prompt = """
 """
 
 memory_organization_agent = create_agent(
-    model=init_model("qwen-flash", temperature=0.1),
+    model=init_model("qwen-flash-2025-07-28", temperature=0.1),
     tools=[],
     system_prompt=system_prompt,
     response_format=MemoryFactsResponse,

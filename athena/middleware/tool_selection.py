@@ -39,11 +39,9 @@ class ToolSelectionMiddleware(AgentMiddleware[AthenaState, DialogueContext]):
         # 从上下文中获取用户意图列表
         runtime = request.runtime
         context = cast(DialogueContext, runtime.context)
-        intentions = (
-            context.user_intention
-            if context.user_intention
-            else [IntentionType.GENERAL]
-        )
+        intentions = list(context.user_intention) if context.user_intention else []
+        if IntentionType.GENERAL not in intentions:
+            intentions.append(IntentionType.GENERAL)
 
         # 根据意图列表选择工具（合并所有意图需要的工具）
         selected_tools = self._tools_collection.query_tools(

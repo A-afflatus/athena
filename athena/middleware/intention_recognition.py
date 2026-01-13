@@ -24,12 +24,10 @@ system_prompt = """你是一个意图识别网关。你的唯一职责是识别�
 
 【意图分类】
 - EXIT: 用户明确表达退出、再见、结束或停止对话的意愿，或者由于特殊原因AI想要结束当前会话时。
-- WEATHER: 用户询问天气、气温、降雨、风力等天气相关信息。
-- SEARCH: 用户需要搜索信息、查询资料、查找内容等。
 - GENERAL: 除上述特定意图外的所有情况，包括闲聊、提问、请求帮助等。
 
 【重要说明】
-用户可能同时表达多个意图，例如："帮我查一下北京的天气，然后搜索一下明天的新闻"包含了WEATHER和SEARCH两个意图。
+用户可能同时表达多个意图，例如(假设)："帮我查一下北京的天气，然后搜索一下明天的新闻"包含了WEATHER和SEARCH两个意图。
 请识别出所有相关的意图，返回意图列表。
 
 【严格约束】
@@ -90,10 +88,13 @@ class IntentionRecognitionMiddleware(AgentMiddleware[AthenaState, DialogueContex
                     continue
                 dialogue_parts.append(f"user:{cast(str, msg.content)}")
             elif isinstance(msg, AIMessage):
-                dialogue_parts.append(f"ai:{cast(str, msg.content)}")
+                content = cast(str, msg.content)
+                if len(content) > 100:
+                    content = f"{content[:50]}...{content[-50:]}"
+                dialogue_parts.append(f"ai:{content}")
 
         req_mes = (
-            f"最近对话:{','.join(dialogue_parts)}\n当前用户消息:{user_message.content}"
+            f"最近对话:{','.join(dialogue_parts)}\n当前用户消息为user的最后一条消息"
         )
         # 识别意图
         response = self.agent.invoke({"messages": [HumanMessage(content=req_mes)]})

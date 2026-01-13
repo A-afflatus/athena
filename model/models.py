@@ -13,7 +13,7 @@ base_url = os.getenv("LLM_QWEN_BASE_URL")
 
 
 def init_model(
-    model: str = "qwen-flash",
+    model: str = "qwen-flash-2025-07-28",
     enable_thinking: bool = False,
     model_kwargs: dict[str, Any] = {},  # noqa: B006
     extra_body: dict[str, Any] = {},  # noqa: B006

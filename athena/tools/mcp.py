@@ -11,7 +11,7 @@ wrap_map: dict[str, Callable[[BaseTool], BaseToolEntity]] = {
     "maps_weather": lambda tool: (
         BaseToolEntity(
             tool=tool,
-            intentions=[IntentionType.WEATHER],
+            intentions=[IntentionType.GENERAL],
             # 强化 maps_weather 工具的描述，使其更清晰和详细
             description="根据省市名称(如北京、安徽、安庆等,最低到市级别不能再细分)查询指定城市未来几天的天气情况",
         )

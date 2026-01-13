@@ -27,7 +27,7 @@ load_dotenv()
 llm = ChatQwen(
     api_key=SecretStr("sk-0622e4a2dc0a4c138009a4a796cae4e7"),
     base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
-    model="qwen-flash",
+    model="qwen-flash-2025-07-28",
 )
 llm_deepseek = ChatDeepSeek(
     api_key=SecretStr("sk-c52af06c35504a448a134fb76a12a684"),

@@ -46,10 +46,10 @@ class Athena:
             model="qwen3-max", temperature=0.7, extra_body={"enable_search": True}
         )
         # 意图识别llm
-        self.intention_llm = init_model(model="qwen-flash", temperature=0.1)
+        self.intention_llm = init_model(model="qwen-flash-2025-07-28", temperature=0.1)
         # 总结llm - 用于上下文摘要，需要快速且准确
         self.summarization_llm = init_model(
-            model="qwen-flash", enable_thinking=True, temperature=0.1
+            model="qwen-flash-2025-07-28", enable_thinking=True, temperature=0.1
         )
 
     async def init_middleware(self, tools: Tools):
@@ -58,14 +58,14 @@ class Athena:
         # 意图识别中间件
         intention_middleware = IntentionRecognitionMiddleware(llm=self.intention_llm)
         # 工具选择中间件（根据意图动态调整工具）
-        tool_selection_middleware = ToolSelectionMiddleware(tools)
+        # tool_selection_middleware = ToolSelectionMiddleware(tools)
         # 用户记忆中间件
         user_memory_middleware = UserMemoryMiddleware()
 
         return [
             user_memory_middleware,  # 用户级别记忆
             intention_middleware,  # 意图识别
-            tool_selection_middleware,  # 工具选择（必须在意图识别之后）
+            # tool_selection_middleware,  # 工具选择（必须在意图识别之后）
             dynamic_system_prompt,  # 动态系统提示词
             SummarizationMiddleware(model=self.summarization_llm),  # 上下文摘要
         ]

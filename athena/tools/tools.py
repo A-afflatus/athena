@@ -7,6 +7,7 @@ from pydantic import Field
 from athena.context import DialogueContext, UserGender
 from athena.tools.base import BaseToolEntity, Tools
 from athena.tools.mcp import init_mcp_tools
+from playwright.async_api import async_playwright
 
 
 class SaveUserInfoInput(BaseModel):
@@ -22,8 +23,8 @@ def save_user_info(
     runtime: ToolRuntime[DialogueContext], input: SaveUserInfoInput
 ) -> Command:
     """
-    将用户主动声明或通过对话识别出的用户信息（姓名、性别、所在地）保存到对话上下文中。
-    当 AI 询问出或用户主动告知这些基本信息时，应调用此工具记录，以便后续提供个性化回复。
+    在对话过程中，当 AI 识别到用户提供了其基本信息（姓名、性别、所在地）且当前对话上下文中缺失这些信息时，调用此工具进行保存。
+    注意：此工具仅用于记录先前未知的用户信息。如果上下文已包含这些信息，则不应调用。
     """
     runtime.context.user_name = input.user_name if input.user_name else None
     runtime.context.user_gender = input.user_gender if input.user_gender else None
@@ -42,11 +43,12 @@ def save_user_info(
     )
 
 
-
 async def init_tools() -> Tools:
     """初始化工具"""
     # mcp工具
     mcp_tools = await init_mcp_tools()
     # 声明式工具
-    declaration_tools = [BaseToolEntity(tool=save_user_info)]
+    declaration_tools = [
+        BaseToolEntity(tool=save_user_info),
+    ]
     return Tools(tools=mcp_tools + declaration_tools)
