@@ -15,9 +15,9 @@ from typing import TYPE_CHECKING, cast
 from graphiti_core import Graphiti
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
-from middleware.graphiti.adapter import LangchainEmbedder, LangchainGenericClient, LangchainReranker
-from model.embedding import init_embedding_model
-from model.models import init_model
+from src.middleware.graphiti.adapter import LangchainEmbedder, LangchainGenericClient, LangchainReranker
+from src.model.embedding import init_embedding_model
+from src.model.models import init_model
 
 if TYPE_CHECKING:
     pass

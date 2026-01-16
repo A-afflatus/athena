@@ -17,9 +17,9 @@ from langchain.agents.middleware.types import (
     ModelResponse,
 )
 
-from athena.context import AthenaState, ChatEventData, DialogueContext, IntentionType
-from athena.tools.base import ToolType, Tools
-from bootstrap.logger import get_logger
+from src.athena.context import AthenaState, ChatEventData, DialogueContext, IntentionType
+from src.athena.tools.base import ToolType, Tools
+from src.bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
 

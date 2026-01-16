@@ -14,21 +14,21 @@ from langchain_core.messages import HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 
-from athena.context import (
+from src.athena.context import (
     AthenaState,
     ChatEventListener,
     ChatRequest,
     DialogueContext,
     of_chat_event,
 )
-from athena.middleware.dichotomy_prompts import dynamic_system_prompt
-from athena.middleware.intention_recognition import IntentionRecognitionMiddleware
-from athena.middleware.memory import UserMemoryMiddleware
-from athena.middleware.tool_selection import ToolSelectionMiddleware
-from athena.tools.base import Tools
-from athena.tools import init_tools
-from bootstrap.logger import get_logger
-from model.models import init_model
+from src.athena.middleware.dichotomy_prompts import dynamic_system_prompt
+from src.athena.middleware.intention_recognition import IntentionRecognitionMiddleware
+from src.athena.middleware.memory import UserMemoryMiddleware
+from src.athena.middleware.tool_selection import ToolSelectionMiddleware
+from src.athena.tools.base import Tools
+from src.athena.tools import init_tools
+from src.bootstrap.logger import get_logger
+from src.model.models import init_model
 
 logger = get_logger(__name__)
 

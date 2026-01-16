@@ -9,7 +9,7 @@
     >>> logger.info("Hello!")
 """
 
-from bootstrap.bootstrap import AppContext, bootstrap
+from src.bootstrap.bootstrap import AppContext, bootstrap
 
 __all__ = [
     "AppContext",

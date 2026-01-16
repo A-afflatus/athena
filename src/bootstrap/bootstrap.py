@@ -21,8 +21,8 @@ from typing import TYPE_CHECKING
 
 from dotenv import load_dotenv
 
-from bootstrap.logger import get_logger, setup_logger
-from middleware.graphiti import setup_graphiti
+from src.bootstrap.logger import get_logger, setup_logger
+from src.middleware.graphiti import setup_graphiti
 
 if TYPE_CHECKING:
     from argparse import Namespace

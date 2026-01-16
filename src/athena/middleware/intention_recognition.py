@@ -15,8 +15,8 @@ from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 from langchain_core.callbacks.manager import adispatch_custom_event
 
-from athena.context import AthenaState, ChatEventData, DialogueContext, IntentionType
-from bootstrap.logger import get_logger
+from src.athena.context import AthenaState, ChatEventData, DialogueContext, IntentionType
+from src.bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
 

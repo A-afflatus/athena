@@ -3,7 +3,7 @@ from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
-from bootstrap.logger import get_logger
+from src.bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
 

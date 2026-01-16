@@ -3,8 +3,8 @@ from typing import Callable
 from langchain.tools import BaseTool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-from athena.context import IntentionType
-from athena.tools.base import BaseToolEntity
+from src.athena.context import IntentionType
+from src.athena.tools.base import BaseToolEntity
 
 # 工具包装映射
 wrap_map: dict[str, Callable[[BaseTool], BaseToolEntity]] = {

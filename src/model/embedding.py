@@ -3,8 +3,8 @@ import os
 from dotenv import load_dotenv
 from langchain.embeddings.base import Embeddings
 
-from model.adapter.qwen_embedding import DashScopeMultiModalEmbeddings
-from model.adapter.volcengine_embedding import VolcEngineMultimodalEmbedding
+from src.model.adapter.qwen_embedding import DashScopeMultiModalEmbeddings
+from src.model.adapter.volcengine_embedding import VolcEngineMultimodalEmbedding
 
 load_dotenv()
 

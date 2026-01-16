@@ -12,8 +12,8 @@ import uuid
 from fastapi import WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
-from athena import Athena
-from athena.context import (
+from src.athena import Athena
+from src.athena.context import (
     ChatEvent,
     ChatEventListener,
     ChatRequest,
@@ -21,8 +21,8 @@ from athena.context import (
     UserGender,
     UserType,
 )
-from web.web import app
-from bootstrap.logger import get_logger
+from src.web.web import app
+from src.bootstrap.logger import get_logger
 
 logger = get_logger(__name__)
 

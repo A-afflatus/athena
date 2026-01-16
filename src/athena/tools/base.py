@@ -2,7 +2,7 @@ from enum import Enum
 from re import I
 from langchain_core.tools import BaseTool
 
-from athena.context import IntentionType
+from src.athena.context import IntentionType
 
 
 class ToolType(Enum):

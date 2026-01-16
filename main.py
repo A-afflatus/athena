@@ -17,13 +17,13 @@ import sys
 from typing import TYPE_CHECKING
 
 import uvicorn
-from bootstrap.bootstrap import bootstrap
-from bootstrap.logger import get_logger
-from middleware.graphiti import close_graphiti
-from web import app
+from src.bootstrap import bootstrap
+from src.bootstrap.logger import get_logger
+from src.middleware.graphiti import close_graphiti
+from src.web import app
 
 if TYPE_CHECKING:
-    from bootstrap.bootstrap import AppContext
+    from src.bootstrap import AppContext
 
 logger = get_logger(__name__)
 

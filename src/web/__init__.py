@@ -1,0 +1,12 @@
+"""
+Web 模块初始化
+自动注册所有路由和 WebSocket 端点
+"""
+from __future__ import annotations
+
+from src.web.web import app
+import src.web.robot  # pyright: ignore[reportUnusedImport]
+import src.web.asr  # pyright: ignore[reportUnusedImport]
+import src.web.tts  # pyright: ignore[reportUnusedImport]
+
+__all__ = ["app"]

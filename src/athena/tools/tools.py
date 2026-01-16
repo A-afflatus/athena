@@ -4,9 +4,9 @@ from langgraph.types import Command
 from openai import BaseModel
 from pydantic import Field
 
-from athena.context import DialogueContext, UserGender
-from athena.tools.base import BaseToolEntity, Tools
-from athena.tools.mcp import init_mcp_tools
+from src.athena.context import DialogueContext, UserGender
+from src.athena.tools.base import BaseToolEntity, Tools
+from src.athena.tools.mcp import init_mcp_tools
 from playwright.async_api import async_playwright
 
 

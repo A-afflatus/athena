@@ -1,7 +1,6 @@
 from typing import override
 
 from langchain_core.embeddings import Embeddings
-from pydantic import SecretStr
 from volcenginesdkarkruntime import Ark
 from volcenginesdkarkruntime.types.multimodal_embedding import (
     MultimodalEmbeddingContentPartTextParam,

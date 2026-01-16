@@ -2,14 +2,14 @@ from typing import cast
 
 from langchain.agents.middleware import ModelRequest, dynamic_prompt
 
-from athena.context import DialogueContext, UserType
-from athena.prompt.service_standard import (
+from src.athena.context import DialogueContext, UserType
+from src.athena.prompt.service_standard import (
     acquaintance_service_standard,
     guest_service_standard,
     owner_service_standard,
     stranger_service_standard,
 )
-from athena.prompt.system import athena_system_prompt_template
+from src.athena.prompt.system import athena_system_prompt_template
 
 
 @dynamic_prompt

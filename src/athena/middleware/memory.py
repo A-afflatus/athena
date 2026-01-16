@@ -10,10 +10,10 @@ from langgraph.runtime import Runtime
 from pydantic import BaseModel, Field
 from langchain_core.callbacks.manager import adispatch_custom_event
 
-from athena.context import AthenaState, ChatEventData, DialogueContext
-from bootstrap.logger import get_logger
-from middleware.graphiti import get_graphiti
-from model.models import init_model
+from src.athena.context import AthenaState, ChatEventData, DialogueContext
+from src.bootstrap.logger import get_logger
+from src.middleware.graphiti import get_graphiti
+from src.model.models import init_model
 
 logger = get_logger(__name__)
 
